@@ -33,26 +33,33 @@ export const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link
-              to="/"
-              className={`font-medium transition-colors ${
-                isActive("/") ? "text-primary" : "text-foreground/70 hover:text-primary"
-              }`}
-            >
+            <Link to="/" className={`font-medium transition-colors ${isActive("/") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
               Home
+            </Link>
+            <Link to="/menu" className={`font-medium transition-colors ${isActive("/menu") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
+              Menu
+            </Link>
+            <Link to="/store-locator" className={`font-medium transition-colors ${isActive("/store-locator") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
+              Locations
+            </Link>
+            <Link to="/contact" className={`font-medium transition-colors ${isActive("/contact") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
+              Contact
             </Link>
           </div>
 
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild className="relative">
-              <div>
+              <Link to="/cart">
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-accent">
                     {cartCount}
                   </Badge>
                 )}
-              </div>
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/auth">Sign In</Link>
             </Button>
           </div>
         </div>

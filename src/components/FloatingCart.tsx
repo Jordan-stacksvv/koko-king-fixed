@@ -23,11 +23,14 @@ export const FloatingCart = () => {
     <Button
       size="icon"
       className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl bg-foreground hover:bg-foreground/90 z-50"
+      asChild
     >
-      <ShoppingCart className="h-6 w-6 text-background" />
-      <Badge className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center p-0 bg-primary text-white border-2 border-background">
-        {cartCount}
-      </Badge>
+      <a href="/cart">
+        <ShoppingCart className="h-6 w-6 text-background" />
+        <Badge className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center p-0 bg-primary text-white border-2 border-background">
+          {cartCount}
+        </Badge>
+      </a>
     </Button>
   );
 };
