@@ -4,28 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import kokoKingLogo from "@/assets/koko-king-logo.png";
-
 export const Navbar = () => {
   const location = useLocation();
   const [cartCount, setCartCount] = useState(0);
-
   useEffect(() => {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     setCartCount(cart.reduce((sum: number, item: any) => sum + item.quantity, 0));
-
     const handleCartUpdate = () => {
       const updatedCart = JSON.parse(localStorage.getItem("cart") || "[]");
       setCartCount(updatedCart.reduce((sum: number, item: any) => sum + item.quantity, 0));
     };
-
     window.addEventListener("cartUpdated", handleCartUpdate);
     return () => window.removeEventListener("cartUpdated", handleCartUpdate);
   }, []);
-
   const isActive = (path: string) => location.pathname === path;
-
-  return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  return <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center transition-transform hover:scale-105">
@@ -51,19 +44,16 @@ export const Navbar = () => {
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link to="/cart">
                 <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-accent">
+                {cartCount > 0 && <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-accent">
                     {cartCount}
-                  </Badge>
-                )}
+                  </Badge>}
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/auth">Sign In</Link>
+              <Link to="/auth">login</Link>
             </Button>
           </div>
         </div>
       </div>
-    </nav>
-  );
+    </nav>;
 };
