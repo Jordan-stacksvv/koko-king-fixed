@@ -1,8 +1,10 @@
 import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Truck, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Truck, MapPin, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const Deliveries = () => {
   const [deliveries, setDeliveries] = useState<any[]>([]);
@@ -73,6 +75,36 @@ const Deliveries = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Delivery Integration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Integrate with external delivery services for seamless order fulfillment
+            </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col gap-2"
+                onClick={() => toast.info("Bolt Food integration coming soon!")}
+              >
+                <Truck className="h-6 w-6" />
+                <span>Bolt Food</span>
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col gap-2"
+                onClick={() => toast.info("Custom delivery system available")}
+              >
+                <Truck className="h-6 w-6" />
+                <span>In-House Delivery</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

@@ -21,26 +21,26 @@ export const KitchenLayout = ({ children }: KitchenLayoutProps) => {
   const location = useLocation();
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem("kitchenAuth");
+    const isAuthenticated = localStorage.getItem("managerAuth");
     if (!isAuthenticated) {
-      navigate("/kitchen/login");
+      navigate("/manager/login");
     }
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("kitchenAuth");
+    localStorage.removeItem("managerAuth");
     navigate("/");
   };
 
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = [
-    { path: "/kitchen/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { path: "/kitchen/orders", icon: ShoppingBag, label: "Orders" },
-    { path: "/kitchen/deliveries", icon: Truck, label: "Deliveries" },
-    { path: "/kitchen/menu", icon: ChefHat, label: "Menu" },
-    { path: "/kitchen/payments", icon: DollarSign, label: "Payments" },
-    { path: "/kitchen/settings", icon: Settings, label: "Settings" },
+    { path: "/manager/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/manager/orders", icon: ShoppingBag, label: "Orders" },
+    { path: "/manager/deliveries", icon: Truck, label: "Deliveries" },
+    { path: "/manager/menu", icon: ChefHat, label: "Menu" },
+    { path: "/manager/payments", icon: DollarSign, label: "Payments" },
+    { path: "/manager/settings", icon: Settings, label: "Settings" },
   ];
 
   return (
@@ -49,7 +49,7 @@ export const KitchenLayout = ({ children }: KitchenLayoutProps) => {
       <aside className="w-64 border-r bg-card hidden md:block">
         <div className="p-6 border-b">
           <img src={kokoKingLogo} alt="Koko King" className="h-10 w-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Kitchen Management</p>
+          <p className="text-sm text-muted-foreground">Manager Dashboard</p>
         </div>
 
         <nav className="p-4 space-y-2">
