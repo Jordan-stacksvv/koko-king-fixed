@@ -43,245 +43,96 @@ export const restaurants: Restaurant[] = [
 
 export const menuItems: MenuItem[] = [
   // King Specials
-  {
-    id: "special-1",
-    name: "Father's Day Treat",
-    description: "Porridge or Hot Beverage, Egg Sausage quesadilla, Springrolls, Choice of cake, Choice of Juice",
-    price: 260.00,
-    image: categoryCombo,
-    category: "specials",
-    restaurantId: "east-legon"
-  },
-  {
-    id: "special-2",
-    name: "Special Occasion Value Package",
-    description: "Any Porridge/Hot Bev, Kings Favourite pack (3pc Sandwich, 2 sausages, 2eggs, baked beans), choice of Cake, choice of Juice",
-    price: 150.00,
-    image: categoryCombo,
-    category: "specials",
-    restaurantId: "east-legon"
-  },
-
-  // Snackies
-  {
-    id: "snack-1",
-    name: "Samosa Meal (4pcs)",
-    description: "4 pcs Samosa with a choice of drink",
-    price: 45.00,
-    image: categoryBakery,
-    category: "snacks",
-    restaurantId: "east-legon"
-  },
-  {
-    id: "snack-2",
-    name: "Spring Rolls (4pcs)",
-    description: "Crispy spring rolls served with dipping sauce",
-    price: 40.00,
-    image: categoryBakery,
-    category: "snacks",
-    restaurantId: "osu"
-  },
-  {
-    id: "snack-3",
-    name: "Chicken Wings (6pcs)",
-    description: "Seasoned and fried chicken wings",
-    price: 55.00,
-    image: categoryCombo,
-    category: "snacks",
-    restaurantId: "spintex"
-  },
-
-  // Bakery
-  {
-    id: "bakery-1",
-    name: "Croissant",
-    description: "Buttery, flaky French croissant baked fresh daily",
-    price: 15.00,
-    image: categoryBakery,
-    category: "bakery",
-    restaurantId: "east-legon"
-  },
-  {
-    id: "bakery-2",
-    name: "Chocolate Muffin",
-    description: "Rich chocolate muffin with chocolate chips",
-    price: 18.00,
-    image: categoryBakery,
-    category: "bakery",
-    restaurantId: "osu"
-  },
-  {
-    id: "bakery-3",
-    name: "Blueberry Danish",
-    description: "Sweet pastry filled with fresh blueberries",
-    price: 20.00,
-    image: categoryBakery,
-    category: "bakery",
-    restaurantId: "spintex"
-  },
-  {
-    id: "bakery-4",
-    name: "Meat Pie",
-    description: "Savory meat pie with seasoned beef filling",
-    price: 25.00,
-    image: categoryBakery,
-    category: "bakery",
-    restaurantId: "east-legon"
-  },
+  { id: "ks1", name: "Kings Favourite", description: "Our signature special", price: 75.00, category: "specials", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "ks2", name: "Kings Combo", description: "Sandwich + Beverage/Porridge", price: 65.00, category: "specials", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "ks3", name: "Special Occasion Package", description: "Perfect for celebrations", price: 150.00, category: "specials", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "ks4", name: "Fries + Drumsticks + Ketchup", description: "Crispy combo", price: 105.00, category: "specials", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "ks5", name: "Salad + Smoothie Combo", description: "Healthy and refreshing", price: 97.00, category: "specials", image: categorySalads, restaurantId: "east-legon" },
 
   // Wraps & Quesadillas
-  {
-    id: "wrap-1",
-    name: "Chicken Shawarma",
-    description: "Grilled chicken with vegetables wrapped in warm pita",
-    price: 35.00,
-    image: categoryCombo,
-    category: "wraps",
-    restaurantId: "osu"
-  },
-  {
-    id: "wrap-2",
-    name: "Beef Quesadilla",
-    description: "Grilled tortilla filled with seasoned beef and cheese",
-    price: 40.00,
-    image: categoryCombo,
-    category: "wraps",
-    restaurantId: "spintex"
-  },
-  {
-    id: "wrap-3",
-    name: "Vegetarian Wrap",
-    description: "Fresh vegetables and hummus in a soft tortilla",
-    price: 30.00,
-    image: categorySalads,
-    category: "wraps",
-    restaurantId: "east-legon"
-  },
+  { id: "wq1", name: "Chicken Shawarma", description: "Tender chicken wrap", price: 75.00, category: "wraps", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "wq2", name: "Beef Shawarma", description: "Savory beef wrap", price: 90.00, category: "wraps", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "wq3", name: "Chicken Wrap", description: "Fresh chicken wrap", price: 75.00, category: "wraps", image: categoryCombo, restaurantId: "osu" },
+  { id: "wq4", name: "Tuna Wrap", description: "Light tuna wrap", price: 82.00, category: "wraps", image: categoryCombo, restaurantId: "osu" },
+  { id: "wq5", name: "Cheesy Chicken Quesadilla", description: "Melted cheese and chicken", price: 105.00, category: "wraps", image: categoryCombo, restaurantId: "osu" },
+  { id: "wq6", name: "Cheesy Beef Quesadilla", description: "Beef and cheese delight", price: 115.00, category: "wraps", image: categoryCombo, restaurantId: "spintex" },
+  { id: "wq7", name: "Egg & Cheese Quesadilla", description: "Simple and tasty", price: 68.00, category: "wraps", image: categoryCombo, restaurantId: "spintex" },
+  { id: "wq8", name: "Smoked Ham, Egg & Cheese Quesadilla", description: "Premium ingredients", price: 129.00, category: "wraps", image: categoryCombo, restaurantId: "spintex" },
 
-  // Combo Meals
-  {
-    id: "combo-1",
-    name: "Classic Burger Combo",
-    description: "Juicy burger with fries and a drink",
-    price: 65.00,
-    image: categoryCombo,
-    category: "combo",
-    restaurantId: "east-legon"
-  },
-  {
-    id: "combo-2",
-    name: "Chicken Wings Combo",
-    description: "8 pieces of crispy chicken wings with fries and drink",
-    price: 75.00,
-    image: categoryCombo,
-    category: "combo",
-    restaurantId: "osu"
-  },
-  {
-    id: "combo-3",
-    name: "Sandwich Meal",
-    description: "Choice of sandwich with fries and drink",
-    price: 55.00,
-    image: categoryCombo,
-    category: "combo",
-    restaurantId: "spintex"
-  },
+  // Sandwiches
+  { id: "sw1", name: "Smoked Bacon & Cheese", description: "Premium bacon sandwich", price: 120.00, category: "sandwiches", image: categoryBakery, restaurantId: "east-legon" },
+  { id: "sw2", name: "Smoked Turkey & Cheese", description: "Turkey delight", price: 120.00, category: "sandwiches", image: categoryBakery, restaurantId: "east-legon" },
+  { id: "sw3", name: "Tuna Melt", description: "Warm tuna sandwich", price: 65.00, category: "sandwiches", image: categoryBakery, restaurantId: "east-legon" },
+  { id: "sw4", name: "Chicken Mayo", description: "Creamy chicken", price: 65.00, category: "sandwiches", image: categoryBakery, restaurantId: "osu" },
+  { id: "sw5", name: "Tuna Mayo", description: "Light and fresh", price: 37.00, category: "sandwiches", image: categoryBakery, restaurantId: "osu" },
+  { id: "sw6", name: "Egg Sausage", description: "Breakfast favorite", price: 44.00, category: "sandwiches", image: categoryBakery, restaurantId: "osu" },
+  { id: "sw7", name: "Egg Bacon", description: "Classic combo", price: 85.00, category: "sandwiches", image: categoryBakery, restaurantId: "spintex" },
+  { id: "sw8", name: "Vege Mayo Sandwich", description: "Vegetarian option", price: 39.00, category: "sandwiches", image: categoryBakery, restaurantId: "spintex" },
 
   // Salads
-  {
-    id: "salad-1",
-    name: "Caesar Salad",
-    description: "Crisp romaine, parmesan, croutons with Caesar dressing",
-    price: 40.00,
-    image: categorySalads,
-    category: "salads",
-    restaurantId: "east-legon"
-  },
-  {
-    id: "salad-2",
-    name: "Greek Salad",
-    description: "Fresh vegetables, feta cheese, olives with Greek dressing",
-    price: 45.00,
-    image: categorySalads,
-    category: "salads",
-    restaurantId: "osu"
-  },
-  {
-    id: "salad-3",
-    name: "Grilled Chicken Salad",
-    description: "Mixed greens with grilled chicken and balsamic vinaigrette",
-    price: 50.00,
-    image: categorySalads,
-    category: "salads",
-    restaurantId: "spintex"
-  },
+  { id: "sl1", name: "Plain Salad", description: "Fresh greens", price: 56.00, category: "salads", image: categorySalads, restaurantId: "east-legon" },
+  { id: "sl2", name: "Egg Salad", description: "With boiled eggs", price: 58.00, category: "salads", image: categorySalads, restaurantId: "east-legon" },
+  { id: "sl3", name: "Chicken Salad", description: "Grilled chicken", price: 73.00, category: "salads", image: categorySalads, restaurantId: "osu" },
+  { id: "sl4", name: "Tuna Salad", description: "Fresh tuna", price: 80.00, category: "salads", image: categorySalads, restaurantId: "osu" },
 
   // Sides
-  {
-    id: "side-1",
-    name: "French Fries",
-    description: "Crispy golden fries",
-    price: 20.00,
-    image: categoryCombo,
-    category: "sides",
-    restaurantId: "east-legon"
-  },
-  {
-    id: "side-2",
-    name: "Coleslaw",
-    description: "Fresh creamy coleslaw",
-    price: 15.00,
-    image: categorySalads,
-    category: "sides",
-    restaurantId: "osu"
-  },
-  {
-    id: "side-3",
-    name: "Baked Beans",
-    description: "Savory baked beans in tomato sauce",
-    price: 18.00,
-    image: categoryCombo,
-    category: "sides",
-    restaurantId: "spintex"
-  },
+  { id: "sd1", name: "Spicy Potato Wedges", description: "Crispy and spicy", price: 45.00, category: "sides", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "sd2", name: "Chicken Nuggets", description: "Golden nuggets", price: 45.00, category: "sides", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "sd3", name: "Hash Browns", description: "Crispy hash browns", price: 45.00, category: "sides", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "sd4", name: "Gizzard", description: "Seasoned gizzard", price: 45.00, category: "sides", image: categoryCombo, restaurantId: "osu" },
+  { id: "sd5", name: "6pc Chicken Wings", description: "Spicy wings", price: 53.00, category: "sides", image: categoryCombo, restaurantId: "osu" },
+  { id: "sd6", name: "Koose (3 pcs)", description: "Traditional koose", price: 10.00, category: "sides", image: categoryCombo, restaurantId: "osu" },
+  { id: "sd7", name: "Boffloat (2 pcs)", description: "Sweet boffloat", price: 15.00, category: "sides", image: categoryCombo, restaurantId: "spintex" },
+  { id: "sd8", name: "Bread Roll", description: "Fresh bread roll", price: 15.00, category: "sides", image: categoryBakery, restaurantId: "spintex" },
+  { id: "sd9", name: "Cheese Slice", description: "Premium cheese", price: 13.00, category: "sides", image: categoryBakery, restaurantId: "spintex" },
+  { id: "sd10", name: "Sausage", description: "Grilled sausage", price: 8.00, category: "sides", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "sd11", name: "Egg", description: "Fresh egg", price: 8.00, category: "sides", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "sd12", name: "Baked Beans", description: "Warm baked beans", price: 8.00, category: "sides", image: categoryCombo, restaurantId: "east-legon" },
+
+  // Bakery
+  { id: "bk1", name: "Coconut Cake", description: "Moist coconut cake", price: 30.00, category: "bakery", image: categoryBakery, restaurantId: "east-legon" },
+  { id: "bk2", name: "Marble Cake", description: "Chocolate marble", price: 30.00, category: "bakery", image: categoryBakery, restaurantId: "east-legon" },
+  { id: "bk3", name: "Caramel Cake", description: "Sweet caramel", price: 30.00, category: "bakery", image: categoryBakery, restaurantId: "east-legon" },
+  { id: "bk4", name: "Red Velvet Cake", description: "Classic red velvet", price: 30.00, category: "bakery", image: categoryBakery, restaurantId: "osu" },
+  { id: "bk5", name: "Banana Cake", description: "Fresh banana cake", price: 30.00, category: "bakery", image: categoryBakery, restaurantId: "osu" },
+  { id: "bk6", name: "Plain Doughnut", description: "Classic doughnut", price: 15.00, category: "bakery", image: categoryBakery, restaurantId: "osu" },
+  { id: "bk7", name: "Sugar Doughnut", description: "Sugar coated", price: 15.00, category: "bakery", image: categoryBakery, restaurantId: "spintex" },
+  { id: "bk8", name: "Coconut Doughnut", description: "Coconut topping", price: 15.00, category: "bakery", image: categoryBakery, restaurantId: "spintex" },
+  { id: "bk9", name: "Chocolate Doughnut", description: "Chocolate glazed", price: 15.00, category: "bakery", image: categoryBakery, restaurantId: "spintex" },
+
+  // Porridge & Hot Beverages
+  { id: "pr1", name: "Hausa Koko", description: "Traditional porridge", price: 20.00, category: "porridge", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "pr2", name: "Oblayo", description: "Corn porridge", price: 20.00, category: "porridge", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "pr3", name: "Ekugbemi", description: "Millet porridge", price: 20.00, category: "porridge", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "pr4", name: "Oats", description: "Healthy oats", price: 30.00, category: "porridge", image: categoryCombo, restaurantId: "osu" },
+  { id: "pr5", name: "Tom Brown", description: "Nutritious porridge", price: 30.00, category: "porridge", image: categoryCombo, restaurantId: "osu" },
+  { id: "pr6", name: "Rice Porridge", description: "Creamy rice", price: 30.00, category: "porridge", image: categoryCombo, restaurantId: "osu" },
+  { id: "pr7", name: "Wheat Porridge", description: "Wheat goodness", price: 30.00, category: "porridge", image: categoryCombo, restaurantId: "spintex" },
+  { id: "pr8", name: "White Porridge", description: "Classic porridge", price: 30.00, category: "porridge", image: categoryCombo, restaurantId: "spintex" },
+  { id: "pr9", name: "Milo", description: "Hot chocolate drink", price: 27.00, category: "porridge", image: categoryCombo, restaurantId: "spintex" },
+  { id: "pr10", name: "Tea", description: "Fresh tea", price: 27.00, category: "porridge", image: categoryCombo, restaurantId: "east-legon" },
+  { id: "pr11", name: "Nescafe", description: "Hot coffee", price: 27.00, category: "porridge", image: categoryCombo, restaurantId: "east-legon" },
 
   // Drinks
-  {
-    id: "drink-1",
-    name: "Fresh Orange Juice",
-    description: "Freshly squeezed orange juice",
-    price: 25.00,
-    image: categorySalads,
-    category: "drinks",
-    restaurantId: "east-legon"
-  },
-  {
-    id: "drink-2",
-    name: "Smoothie",
-    description: "Choice of fruit smoothie",
-    price: 30.00,
-    image: categorySalads,
-    category: "drinks",
-    restaurantId: "osu"
-  },
-  {
-    id: "drink-3",
-    name: "Soft Drink",
-    description: "Choice of Coca-Cola, Sprite, or Fanta",
-    price: 12.00,
-    image: categoryCombo,
-    category: "drinks",
-    restaurantId: "spintex"
-  }
+  { id: "dr1", name: "Sprite", description: "Lemon-lime soda", price: 15.00, category: "drinks", image: categorySalads, restaurantId: "east-legon" },
+  { id: "dr2", name: "Fanta", description: "Orange soda", price: 15.00, category: "drinks", image: categorySalads, restaurantId: "east-legon" },
+  { id: "dr3", name: "Coke Zero", description: "Zero sugar cola", price: 15.00, category: "drinks", image: categorySalads, restaurantId: "east-legon" },
+  { id: "dr4", name: "Coca-Cola", description: "Classic cola", price: 15.00, category: "drinks", image: categorySalads, restaurantId: "osu" },
+  { id: "dr5", name: "Brewed Iced Coffee", description: "Cold brew coffee", price: 37.00, category: "drinks", image: categorySalads, restaurantId: "osu" },
+  { id: "dr6", name: "Ice Green Tea", description: "Refreshing tea", price: 30.00, category: "drinks", image: categorySalads, restaurantId: "osu" },
+  { id: "dr7", name: "Fresh Orange Juice", description: "Squeezed orange", price: 37.00, category: "drinks", image: categorySalads, restaurantId: "spintex" },
+  { id: "dr8", name: "Fresh Pineapple Juice", description: "Tropical juice", price: 37.00, category: "drinks", image: categorySalads, restaurantId: "spintex" },
+  { id: "dr9", name: "Fresh Watermelon Juice", description: "Sweet watermelon", price: 37.00, category: "drinks", image: categorySalads, restaurantId: "spintex" },
+  { id: "dr10", name: "Bottled Water", description: "Pure water", price: 7.00, category: "drinks", image: categorySalads, restaurantId: "east-legon" },
 ];
 
 export const categories = [
   { id: "specials", name: "King Specials", image: categoryCombo },
-  { id: "snacks", name: "Snackies", image: categoryBakery },
-  { id: "bakery", name: "Bakery", image: categoryBakery },
   { id: "wraps", name: "Wraps & Quesadillas", image: categoryCombo },
-  { id: "combo", name: "Combo Meals", image: categoryCombo },
+  { id: "sandwiches", name: "Sandwiches", image: categoryBakery },
   { id: "salads", name: "Salads", image: categorySalads },
   { id: "sides", name: "Sides", image: categoryCombo },
+  { id: "bakery", name: "Bakery", image: categoryBakery },
+  { id: "porridge", name: "Porridge & Hot Beverages", image: categoryCombo },
   { id: "drinks", name: "Drinks", image: categorySalads }
 ];
