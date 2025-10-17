@@ -98,7 +98,7 @@ const Dashboard = () => {
                   ))
                 )}
               </div>
-              <Button onClick={() => navigate("/kitchen/orders")} variant="outline" className="w-full mt-4">
+              <Button onClick={() => navigate("/manager/orders")} variant="outline" className="w-full mt-4">
                 View All Orders
               </Button>
             </CardContent>
@@ -109,15 +109,15 @@ const Dashboard = () => {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button onClick={() => navigate("/kitchen/orders")} className="w-full justify-start">
+              <Button onClick={() => navigate("/manager/orders")} className="w-full justify-start">
                 <ShoppingBag className="h-4 w-4 mr-3" />
                 Manage Orders
               </Button>
-              <Button onClick={() => navigate("/kitchen/menu")} variant="outline" className="w-full justify-start">
+              <Button onClick={() => navigate("/manager/menu")} variant="outline" className="w-full justify-start">
                 <CheckCircle className="h-4 w-4 mr-3" />
                 Update Menu
               </Button>
-              <Button onClick={() => navigate("/kitchen/deliveries")} variant="outline" className="w-full justify-start">
+              <Button onClick={() => navigate("/manager/deliveries")} variant="outline" className="w-full justify-start">
                 <Clock className="h-4 w-4 mr-3" />
                 Track Deliveries
               </Button>
