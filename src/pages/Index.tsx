@@ -19,19 +19,32 @@ const Index = () => {
 
   // Request user location on mount and find nearest restaurant
   useEffect(() => {
+    // Show location request notification
+    toast({
+      title: "Location Access",
+      description: "We need your location to show nearby branches and deliver to you.",
+      duration: 5000,
+    });
+
     requestUserLocation()
       .then((position) => {
         const { latitude, longitude } = position.coords;
         const nearest = findNearestRestaurant(latitude, longitude, restaurants);
         setSelectedRestaurant(nearest);
         toast({
-          title: "Location detected",
+          title: "✓ Location detected",
           description: `Showing menu from ${nearest.name}`,
+          duration: 3000,
         });
       })
       .catch((error) => {
         console.log("Location access denied or unavailable:", error);
-        // Keep default restaurant if location is denied
+        toast({
+          title: "Location Required",
+          description: "Please allow location access for accurate delivery and to find your nearest branch.",
+          variant: "destructive",
+          duration: 7000,
+        });
       });
   }, [toast]);
 

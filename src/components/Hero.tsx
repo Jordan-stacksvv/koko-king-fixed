@@ -1,15 +1,50 @@
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { requestUserLocation } from "@/lib/geolocation";
+import { toast } from "sonner";
 
 export const Hero = () => {
   const [location, setLocation] = useState("");
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+
+  useEffect(() => {
+    // Try to detect location on component mount
+    setIsDetectingLocation(true);
+    requestUserLocation()
+      .then((position) => {
+        setLocation(`${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
+        setIsDetectingLocation(false);
+      })
+      .catch(() => {
+        setIsDetectingLocation(false);
+      });
+  }, []);
 
   const handleSearch = () => {
+    if (!location) {
+      toast.error("Please enter your location or allow location access");
+      return;
+    }
     const menuSection = document.getElementById("menu-section");
     if (menuSection) {
       menuSection.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  const handleUseMyLocation = () => {
+    setIsDetectingLocation(true);
+    requestUserLocation()
+      .then((position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        toast.success("Location detected successfully!");
+        setIsDetectingLocation(false);
+      })
+      .catch((error) => {
+        toast.error("Unable to detect location. Please enter manually.");
+        setIsDetectingLocation(false);
+      });
   };
 
   return (
@@ -27,23 +62,34 @@ export const Hero = () => {
               </p>
             </div>
 
-            <div className="max-w-xl mx-auto bg-white rounded-full shadow-lg p-2 flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 px-4">
-                <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Enter a location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
-                />
+            <div className="max-w-xl mx-auto space-y-3">
+              <div className="bg-white rounded-full shadow-lg p-2 flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2 px-4">
+                  <MapPin className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <input
+                    type="text"
+                    placeholder={isDetectingLocation ? "Detecting location..." : "Enter a location"}
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    disabled={isDetectingLocation}
+                    className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground disabled:opacity-50"
+                  />
+                </div>
+                <Button
+                  onClick={handleSearch}
+                  disabled={isDetectingLocation}
+                  className="rounded-full bg-primary hover:bg-primary/90 text-white font-semibold px-8 h-12"
+                >
+                  SEARCH
+                </Button>
               </div>
-              <Button
-                onClick={handleSearch}
-                className="rounded-full bg-primary hover:bg-primary/90 text-white font-semibold px-8 h-12"
+              <button
+                onClick={handleUseMyLocation}
+                disabled={isDetectingLocation}
+                className="text-sm text-primary hover:underline mx-auto block disabled:opacity-50"
               >
-                SEARCH
-              </Button>
+                {isDetectingLocation ? "Detecting..." : "📍 Use my current location"}
+              </button>
             </div>
           </div>
         </div>
