@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Mail, Lock, ChefHat } from "lucide-react";
+import { User, Mail, Lock, ChefHat, Settings } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 
 const Auth = () => {
@@ -115,11 +115,18 @@ const Auth = () => {
               </div>
             </form>
 
-            <div className="mt-6 pt-6 border-t">
+            <div className="mt-6 pt-6 border-t space-y-3">
+              <p className="text-sm text-muted-foreground text-center mb-3">Staff Access</p>
               <Link to="/kitchen/login">
                 <Button variant="outline" className="w-full" size="lg">
                   <ChefHat className="h-5 w-5 mr-2" />
                   Kitchen Access
+                </Button>
+              </Link>
+              <Link to="/manager/login">
+                <Button variant="outline" className="w-full" size="lg">
+                  <Settings className="h-5 w-5 mr-2" />
+                  Manager Access
                 </Button>
               </Link>
             </div>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, Phone, ChefHat, Settings } from "lucide-react";
+import { ShoppingCart, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -41,20 +41,6 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/kitchen/login">
-                <ChefHat className="h-4 w-4 mr-2" />
-                Kitchen
-              </Link>
-            </Button>
-            
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/manager/login">
-                <Settings className="h-4 w-4 mr-2" />
-                Manager
-              </Link>
-            </Button>
-
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link to="/cart">
                 <ShoppingCart className="h-5 w-5" />
