@@ -132,6 +132,15 @@ const MenuManagement = () => {
             {editingItem && (
               <div className="space-y-4">
                 <div className="space-y-2">
+                  <Label>Image URL</Label>
+                  <Input
+                    value={editingItem.image}
+                    onChange={(e) => setEditingItem({ ...editingItem, image: e.target.value })}
+                    placeholder="Enter image URL or upload image"
+                  />
+                  <p className="text-xs text-muted-foreground">You can paste an image URL or upload to a service</p>
+                </div>
+                <div className="space-y-2">
                   <Label>Item Name</Label>
                   <Input
                     value={editingItem.name}

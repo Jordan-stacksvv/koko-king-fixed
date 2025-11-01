@@ -72,58 +72,50 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Orders</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentOrders.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">No orders yet</p>
-                ) : (
-                  recentOrders.map((order: any) => (
-                    <div key={order.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                      <div className="flex-1">
-                        <p className="font-semibold">{order.id}</p>
-                        <p className="text-sm text-muted-foreground">{order.customer.name}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">₵{order.total.toFixed(2)}</p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
-                          {order.status}
-                        </span>
-                      </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Completed Orders</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {orders.filter((o: any) => o.status === "completed").length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No completed orders yet</p>
+              ) : (
+                orders.filter((o: any) => o.status === "completed").map((order: any) => (
+                  <div key={order.id} className="flex items-center justify-between p-2 text-sm border-b">
+                    <div className="flex-1">
+                      <p className="font-medium">{order.id}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(order.timestamp).toLocaleDateString()}
+                      </p>
                     </div>
-                  ))
-                )}
-              </div>
-              <Button onClick={() => navigate("/manager/orders")} variant="outline" className="w-full mt-4">
-                View All Orders
-              </Button>
-            </CardContent>
-          </Card>
+                    <p className="font-semibold">₵{order.total.toFixed(2)}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button onClick={() => navigate("/manager/orders")} className="w-full justify-start">
-                <ShoppingBag className="h-4 w-4 mr-3" />
-                Manage Orders
-              </Button>
-              <Button onClick={() => navigate("/manager/menu")} variant="outline" className="w-full justify-start">
-                <CheckCircle className="h-4 w-4 mr-3" />
-                Update Menu
-              </Button>
-              <Button onClick={() => navigate("/manager/deliveries")} variant="outline" className="w-full justify-start">
-                <Clock className="h-4 w-4 mr-3" />
-                Track Deliveries
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button onClick={() => navigate("/manager/orders")} className="w-full justify-start">
+              <ShoppingBag className="h-4 w-4 mr-3" />
+              Manage Orders
+            </Button>
+            <Button onClick={() => navigate("/manager/menu")} variant="outline" className="w-full justify-start">
+              <CheckCircle className="h-4 w-4 mr-3" />
+              Update Menu
+            </Button>
+            <Button onClick={() => navigate("/manager/deliveries")} variant="outline" className="w-full justify-start">
+              <Clock className="h-4 w-4 mr-3" />
+              Track Deliveries
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </KitchenLayout>
   );

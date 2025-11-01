@@ -5,6 +5,23 @@ const GOOGLE_GEOLOCATION_URL = `https://www.googleapis.com/geolocation/v1/geoloc
 }`;
 
 /**
+ * Request user location using browser geolocation API.
+ */
+export const requestUserLocation = async (): Promise<GeolocationPosition> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation not supported"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 8000,
+      maximumAge: 0,
+    });
+  });
+};
+
+/**
  * Get the most accurate possible user location.
  * Tries Google Geolocation API first, then falls back to browser geolocation.
  */
