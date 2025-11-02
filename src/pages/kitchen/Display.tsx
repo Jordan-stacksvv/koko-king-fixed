@@ -9,7 +9,7 @@ const Display = () => {
     const loadOrders = () => {
       const orders = JSON.parse(localStorage.getItem("orders") || "[]");
       const active = orders.filter((order: any) => 
-        order.status === "preparing"
+        order.status === "preparing" || order.status === "confirmed"
       );
       setActiveOrders(active);
     };

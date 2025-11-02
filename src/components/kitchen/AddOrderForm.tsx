@@ -59,7 +59,7 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
     }
 
     const newOrder = {
-      id: `ORD-${Date.now()}`,
+      id: `KK-${Math.floor(1000 + Math.random() * 9000)}`,
       customer,
       items: selectedItems,
       total: selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0),

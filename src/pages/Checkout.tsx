@@ -33,7 +33,7 @@ const Checkout = () => {
     e.preventDefault();
 
     const order = {
-      id: `#${Math.floor(1000 + Math.random() * 9000)}`,
+      id: `KK-${Math.floor(1000 + Math.random() * 9000)}`,
       items: cart,
       customer: formData,
       deliveryMethod,

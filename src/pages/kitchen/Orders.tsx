@@ -3,17 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { LogOut, Bell, Search, Plus, Printer } from "lucide-react";
-import { OrderCard } from "@/components/kitchen/OrderCard";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LogOut, Search, Plus, Printer, Monitor } from "lucide-react";
 import { AddOrderForm } from "@/components/kitchen/AddOrderForm";
 import kokoKingLogo from "@/assets/koko-king-logo.png";
+import { toast } from "sonner";
 
 const KitchenOrders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<any[]>([]);
   const [allOrders, setAllOrders] = useState<any[]>([]);
-  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [notifiedOrders, setNotifiedOrders] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
@@ -29,7 +28,7 @@ const KitchenOrders = () => {
 
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(loadOrders, 3000); // Check for new orders every 3 seconds
+    const interval = setInterval(loadOrders, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -39,7 +38,6 @@ const KitchenOrders = () => {
       (order: any) => order.status !== "completed" && order.status !== "cancelled"
     );
     
-    // Only notify for NEW pending orders that haven't been notified yet
     const pendingOrders = activeOrders.filter((order: any) => order.status === "pending");
     pendingOrders.forEach((order: any) => {
       if (!notifiedOrders.has(order.id)) {
@@ -74,21 +72,13 @@ const KitchenOrders = () => {
   }, []);
 
   const handleStatusUpdate = (orderId: string, newStatus: string) => {
-    const updatedOrders = orders.map(order =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    );
-    setOrders(updatedOrders);
-    
-    // Update in localStorage
     const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
     const updated = allOrders.map((order: any) =>
       order.id === orderId ? { ...order, status: newStatus } : order
     );
     localStorage.setItem("orders", JSON.stringify(updated));
-  };
-
-  const handleConfirmOrder = (orderId: string) => {
-    handleStatusUpdate(orderId, "preparing");
+    loadOrders();
+    toast.success(`Order ${orderId} updated to ${newStatus}`);
   };
 
   const handlePrintOrder = (order: any) => {
@@ -115,38 +105,15 @@ TOTAL: ₵${order.total.toFixed(2)}
     }
   };
 
-  const handleRemoveOrder = (orderId: string) => {
-    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const updated = allOrders.map((order: any) =>
-      order.id === orderId ? { ...order, status: "completed" } : order
-    );
-    localStorage.setItem("orders", JSON.stringify(updated));
-    loadOrders();
-  };
-
-  const toggleExpand = (orderId: string) => {
-    const newExpanded = new Set(expandedOrders);
-    if (newExpanded.has(orderId)) {
-      newExpanded.delete(orderId);
-    } else {
-      // Limit to 3 expanded orders
-      if (newExpanded.size >= 3) {
-        const firstExpanded = Array.from(newExpanded)[0];
-        newExpanded.delete(firstExpanded);
-      }
-      newExpanded.add(orderId);
-    }
-    setExpandedOrders(newExpanded);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem("kitchenAuth");
     navigate("/");
   };
 
   const pendingOrders = orders.filter(o => o.status === "pending");
+  const confirmOrders = orders.filter(o => o.status === "confirmed");
   const preparingOrders = orders.filter(o => o.status === "preparing");
-  const readyOrders = orders.filter(o => o.status === "ready");
+  const completedOrders = allOrders.filter(o => o.status === "completed");
 
   const openDisplayPage = () => {
     window.open('/kitchen/display', '_blank', 'width=1920,height=1080');
@@ -160,7 +127,6 @@ TOTAL: ₵${order.total.toFixed(2)}
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b bg-card sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -177,9 +143,7 @@ TOTAL: ₵${order.total.toFixed(2)}
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        {/* Global Search Bar */}
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -203,8 +167,8 @@ TOTAL: ₵${order.total.toFixed(2)}
                     <p className="font-bold">{order.id}</p>
                     <span className={`text-xs px-2 py-1 rounded ${
                       order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      order.status === 'ready' ? 'bg-blue-100 text-blue-800' :
-                      order.status === 'preparing' ? 'bg-yellow-100 text-yellow-800' :
+                      order.status === 'preparing' ? 'bg-blue-100 text-blue-800' :
+                      order.status === 'confirmed' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {order.status}
@@ -222,165 +186,177 @@ TOTAL: ₵${order.total.toFixed(2)}
           )}
         </div>
 
-        <div className="flex items-center justify-between mb-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="flex items-center justify-between mb-4">
-              <TabsList>
-                <TabsTrigger value="pending">New Orders ({pendingOrders.length})</TabsTrigger>
-                <TabsTrigger value="preparing">Preparing ({preparingOrders.length})</TabsTrigger>
-                <TabsTrigger value="ready">Ready ({readyOrders.length})</TabsTrigger>
-              </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
+            <TabsList>
+              <TabsTrigger value="pending">New Orders ({pendingOrders.length})</TabsTrigger>
+              <TabsTrigger value="confirmed">Confirm ({confirmOrders.length})</TabsTrigger>
+              <TabsTrigger value="preparing">Preparing ({preparingOrders.length})</TabsTrigger>
+              <TabsTrigger value="done">Done ({completedOrders.length})</TabsTrigger>
+            </TabsList>
 
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={openDisplayPage}>
-                  Display Page (Cooks View)
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={openDisplayPage}>
+                <Monitor className="h-4 w-4 mr-2" />
+                Display Page
+              </Button>
+              
+              <Dialog open={isAddOrderOpen} onOpenChange={setIsAddOrderOpen}>
+                <Button onClick={() => setIsAddOrderOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Order
                 </Button>
-                
-                <Dialog open={isAddOrderOpen} onOpenChange={setIsAddOrderOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Order
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add Walk-in Order</DialogTitle>
-                    </DialogHeader>
-                    <AddOrderForm onClose={() => setIsAddOrderOpen(false)} />
-                  </DialogContent>
-                </Dialog>
-              </div>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Walk-in Order</DialogTitle>
+                  </DialogHeader>
+                  <AddOrderForm onClose={() => setIsAddOrderOpen(false)} />
+                </DialogContent>
+              </Dialog>
             </div>
+          </div>
 
-            <TabsContent value="pending" className="mt-0">
-              {pendingOrders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <Bell className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h2 className="text-2xl font-semibold mb-2">No Pending Orders</h2>
-                  <p className="text-muted-foreground">Waiting for new orders to arrive...</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Active Incoming Orders</h3>
-                  <div className="grid gap-4">
-                    {pendingOrders.map((order) => (
-                      <div key={order.id} className="border-2 border-orange-500 rounded-lg p-4 bg-card animate-pulse">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <Bell className="h-5 w-5 text-orange-500" />
-                            <div>
-                              <p className="font-bold text-lg">{order.id}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {order.customer.name} • {new Date(order.timestamp).toLocaleTimeString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handlePrintOrder(order)}
-                            >
-                              <Printer className="h-4 w-4 mr-2" />
-                              Print
-                            </Button>
-                            <Button onClick={() => handleConfirmOrder(order.id)}>
-                              Accept & Start Preparing
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4 mt-3">
-                          {order.items.map((item: any, idx: number) => (
-                            <div key={idx} className="text-sm">
-                              {item.quantity}x {item.name}
-                            </div>
-                          ))}
-                        </div>
+          {/* Pending Orders Tab */}
+          <TabsContent value="pending" className="mt-0">
+            {pendingOrders.length === 0 ? (
+              <div className="text-center py-20 text-muted-foreground">No new orders</div>
+            ) : (
+              <div className="grid gap-4">
+                {pendingOrders.map((order) => (
+                  <div key={order.id} className="border-2 border-orange-500 rounded-lg p-4 bg-orange-50 dark:bg-orange-950/20 animate-pulse">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="font-bold text-lg">{order.id}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {order.customer.name} • {new Date(order.timestamp).toLocaleTimeString()}
+                        </p>
                       </div>
-                    ))}
+                      <Button onClick={() => handleStatusUpdate(order.id, "confirmed")}>
+                        Accept Order
+                      </Button>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4 mt-3">
+                      {order.items.map((item: any, idx: number) => (
+                        <div key={idx} className="text-sm">
+                          {item.quantity}x {item.name}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </TabsContent>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-            <TabsContent value="preparing" className="mt-0">
-              {preparingOrders.length === 0 ? (
-                <div className="text-center py-20 text-muted-foreground">No orders being prepared</div>
-              ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {preparingOrders.map((order) => (
-                    <div key={order.id} className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="font-bold text-lg">{order.id}</p>
-                          <p className="text-sm text-muted-foreground">{order.customer.name}</p>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handlePrintOrder(order)}
-                        >
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="space-y-2">
-                        {order.items.map((item: any, idx: number) => (
-                          <div key={idx} className="text-sm font-medium">
-                            {item.quantity}x {item.name}
-                            {item.extras?.length > 0 && (
-                              <p className="text-xs text-muted-foreground ml-4">+ {item.extras.join(', ')}</p>
-                            )}
-                          </div>
-                        ))}
+          {/* Confirm Orders Tab */}
+          <TabsContent value="confirmed" className="mt-0">
+            {confirmOrders.length === 0 ? (
+              <div className="text-center py-20 text-muted-foreground">No orders to confirm</div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {confirmOrders.map((order) => (
+                  <div key={order.id} className="border-2 border-yellow-500 rounded-lg p-4 bg-yellow-50 dark:bg-yellow-950/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="font-bold text-lg">{order.id}</p>
+                        <p className="text-sm text-muted-foreground">{order.customer.name}</p>
                       </div>
                       <Button 
-                        className="w-full mt-4" 
-                        onClick={() => handleStatusUpdate(order.id, "ready")}
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handlePrintOrder(order)}
                       >
-                        Mark as Ready
+                        <Printer className="h-4 w-4 mr-2" />
+                        Print
                       </Button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="ready" className="mt-0">
-              {readyOrders.length === 0 ? (
-                <div className="text-center py-20 text-muted-foreground">No ready orders</div>
-              ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {readyOrders.map((order) => (
-                    <div key={order.id} className="border-2 border-green-500 rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="font-bold text-lg">{order.id}</p>
-                          <p className="text-sm text-muted-foreground">{order.customer.name}</p>
-                          <p className="text-xs text-muted-foreground">{order.customer.phone}</p>
+                    <div className="space-y-2">
+                      {order.items.map((item: any, idx: number) => (
+                        <div key={idx} className="text-sm font-medium">
+                          {item.quantity}x {item.name}
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        {order.items.map((item: any, idx: number) => (
-                          <div key={idx} className="text-sm font-medium">
-                            {item.quantity}x {item.name}
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-sm font-bold mt-3 text-right">Total: ₵{(order.total || 0).toFixed(2)}</p>
-                      <Button 
-                        className="w-full mt-4" 
-                        onClick={() => handleRemoveOrder(order.id)}
-                      >
-                        Complete & Archive
-                      </Button>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+                    <Button 
+                      className="w-full mt-4" 
+                      onClick={() => handleStatusUpdate(order.id, "preparing")}
+                    >
+                      Start Preparing
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Preparing Orders Tab */}
+          <TabsContent value="preparing" className="mt-0">
+            {preparingOrders.length === 0 ? (
+              <div className="text-center py-20 text-muted-foreground">No orders being prepared</div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {preparingOrders.map((order) => (
+                  <div key={order.id} className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="font-bold text-lg">{order.id}</p>
+                        <p className="text-sm text-muted-foreground">{order.customer.name}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {order.items.map((item: any, idx: number) => (
+                        <div key={idx} className="text-sm font-medium">
+                          {item.quantity}x {item.name}
+                        </div>
+                      ))}
+                    </div>
+                    <Button 
+                      className="w-full mt-4" 
+                      onClick={() => handleStatusUpdate(order.id, "completed")}
+                    >
+                      Mark as Done
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Done Orders Tab */}
+          <TabsContent value="done" className="mt-0">
+            {completedOrders.length === 0 ? (
+              <div className="text-center py-20 text-muted-foreground">No completed orders</div>
+            ) : (
+              <div className="space-y-2">
+                {completedOrders.map((order) => (
+                  <div 
+                    key={order.id} 
+                    className="border rounded-lg p-4 bg-card cursor-pointer hover:bg-accent"
+                    onClick={() => setSelectedOrderForReceipt(order)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <p className="font-bold">{order.id}</p>
+                          <p className="text-sm text-muted-foreground">{order.customer.name}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(order.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">₵{(order.total || 0).toFixed(2)}</p>
+                        <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
+                          Completed
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Receipt Dialog */}

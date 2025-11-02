@@ -5,31 +5,56 @@ This guide covers the complete Convex integration for the Koko King food deliver
 ## System Architecture
 
 The system now has three user roles:
-1. **Kitchen Staff** - Handle incoming orders, mark as preparing, and mark as ready
-2. **Manager** - View completed orders, manage menu, track deliveries
+1. **Kitchen Staff** - Handle incoming orders through a 4-stage workflow
+2. **Manager** - View all orders (read-only), manage menu, track deliveries
 3. **Admin** - Oversee all branches, add new locations, view sales analytics
 
 ## Features Implemented
 
 ### Order Management
-- Real-time order notifications (sound + toast for new pending orders only)
-- Three-stage workflow: Pending → Preparing → Ready
-- Kitchen Display page for cooks to see active orders being prepared
-- Print receipt functionality
-- Search all orders by ID, customer name, or phone
+- **Order IDs**: Short format (KK-XXXX) for easy reference
+- **Real-time notifications**: Sound + toast for new pending orders only (stops after acceptance)
+- **Four-stage kitchen workflow**:
+  1. **Pending** (New Orders) - Accept incoming orders
+  2. **Confirmed** - Print receipt + Start preparing
+  3. **Preparing** - Mark as done when ready
+  4. **Done** - Read-only list of completed orders
+- **Kitchen Display page** - Shows confirmed and preparing orders for cooks (separate screen)
+- **Print receipt functionality** - Available in confirmed stage
+- **Global search** - Search all orders by ID, customer name, or phone
+- **Manager orders view** - Read-only table view with click-to-see-details
+
+**Order Status Flow:**
+```
+Customer Places Order → "pending" status
+    ↓
+Kitchen Accepts → "confirmed" status (can print receipt)
+    ↓
+Kitchen Starts Preparing → "preparing" status (shown on cook's display)
+    ↓
+Kitchen Marks Done → "completed" status (archived in Done list)
+```
+
+**Notification Behavior:**
+- Sound and toast notification trigger ONLY when a new "pending" order arrives
+- Once kitchen accepts (moves to "confirmed"), notifications stop for that order
+- Each order ID is tracked to prevent duplicate notifications
 
 ### Homepage Features
-- KFC-style banner carousel with custom images (reduced height for mobile)
-- Location selector showing "From" (restaurant) and "To" (delivery address)
-- Category carousel with food categories
-- Search box to filter menu items by name or description
-- Responsive grid layout (2 columns on mobile, 3 on desktop)
+- **KFC-style banner carousel** - Optimized heights (250px mobile, 320px tablet, 380px desktop)
+- **Location selector** - Shows "From" (restaurant) and "To" (delivery address)
+- **Category carousel** - Browse food categories with images
+- **Menu search box** - Filter items by name or description
+- **Responsive grid layout** - 2 columns on mobile, 3 on desktop
+- **Crown favicon** - Simple gold crown icon on white background
 
 ### Admin Dashboard
+- Three separate login pages: Kitchen, Manager, and Admin
 - View sales across all branches
 - Add and manage branch locations
 - Track performance metrics per branch
 - Overall business analytics
+- Accessible via /admin/login
 
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
