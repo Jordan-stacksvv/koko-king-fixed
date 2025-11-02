@@ -9,7 +9,7 @@ const Display = () => {
     const loadOrders = () => {
       const orders = JSON.parse(localStorage.getItem("orders") || "[]");
       const active = orders.filter((order: any) => 
-        order.status === "pending" || order.status === "preparing"
+        order.status === "preparing"
       );
       setActiveOrders(active);
     };
@@ -22,7 +22,7 @@ const Display = () => {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Kitchen Display</h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Kitchen Display - Orders Being Prepared</h1>
         
         {activeOrders.length === 0 ? (
           <div className="text-center text-2xl text-muted-foreground py-20">

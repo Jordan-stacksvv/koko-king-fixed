@@ -87,9 +87,9 @@ export const MenuItem = ({ id, name, description, price, image, category }: Menu
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Card className="group overflow-hidden transition-all hover:shadow-[var(--shadow-hover)] cursor-pointer">
+        <Card className="group overflow-hidden transition-all hover:shadow-lg cursor-pointer h-full flex flex-col">
           <CardHeader className="p-0">
-            <div className="relative h-40 overflow-hidden">
+            <div className="relative h-32 sm:h-40 overflow-hidden">
               <img
                 src={image}
                 alt={name}
@@ -97,10 +97,10 @@ export const MenuItem = ({ id, name, description, price, image, category }: Menu
               />
             </div>
           </CardHeader>
-          <CardContent className="p-3">
-            <CardTitle className="text-base mb-1 line-clamp-1">{name}</CardTitle>
-            <CardDescription className="line-clamp-1 text-xs">{description}</CardDescription>
-            <p className="text-lg font-bold text-primary mt-2">₵{price.toFixed(2)}</p>
+          <CardContent className="p-2 sm:p-3 flex-1 flex flex-col">
+            <CardTitle className="text-sm sm:text-base mb-1 line-clamp-2">{name}</CardTitle>
+            <CardDescription className="line-clamp-1 text-xs mb-auto">{description}</CardDescription>
+            <p className="text-base sm:text-lg font-bold text-primary mt-2">₵{price.toFixed(2)}</p>
           </CardContent>
         </Card>
       </DialogTrigger>

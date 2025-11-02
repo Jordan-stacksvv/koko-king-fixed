@@ -14,7 +14,7 @@ const KitchenOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [allOrders, setAllOrders] = useState<any[]>([]);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
-  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [notifiedOrders, setNotifiedOrders] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
   const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
@@ -39,13 +39,16 @@ const KitchenOrders = () => {
       (order: any) => order.status !== "completed" && order.status !== "cancelled"
     );
     
-    // New order notification
-    if (activeOrders.length > lastOrderCount) {
-      playNotificationSound();
-      showNewOrderNotification();
-    }
+    // Only notify for NEW pending orders that haven't been notified yet
+    const pendingOrders = activeOrders.filter((order: any) => order.status === "pending");
+    pendingOrders.forEach((order: any) => {
+      if (!notifiedOrders.has(order.id)) {
+        playNotificationSound();
+        showNewOrderNotification();
+        setNotifiedOrders(prev => new Set([...prev, order.id]));
+      }
+    });
     
-    setLastOrderCount(activeOrders.length);
     setOrders(activeOrders);
     setAllOrders(storedOrders);
   };
@@ -85,7 +88,7 @@ const KitchenOrders = () => {
   };
 
   const handleConfirmOrder = (orderId: string) => {
-    handleStatusUpdate(orderId, "confirmed");
+    handleStatusUpdate(orderId, "preparing");
   };
 
   const handlePrintOrder = (order: any) => {
@@ -142,13 +145,12 @@ TOTAL: ₵${order.total.toFixed(2)}
   };
 
   const pendingOrders = orders.filter(o => o.status === "pending");
-  const confirmedOrders = orders.filter(o => o.status === "confirmed" || o.status === "preparing");
-  const doneOrders = orders.filter(o => o.status === "ready" || o.status === "completed");
+  const preparingOrders = orders.filter(o => o.status === "preparing");
+  const readyOrders = orders.filter(o => o.status === "ready");
 
-  const filteredDoneOrders = doneOrders.filter(o => 
-    o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.customer.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const openDisplayPage = () => {
+    window.open('/kitchen/display', '_blank', 'width=1920,height=1080');
+  };
 
   const searchResults = searchQuery.trim() ? allOrders.filter(o => 
     o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -224,12 +226,15 @@ TOTAL: ₵${order.total.toFixed(2)}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex items-center justify-between mb-4">
               <TabsList>
-                <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
-                <TabsTrigger value="confirmed">Confirmed ({confirmedOrders.length})</TabsTrigger>
-                <TabsTrigger value="done">Done ({doneOrders.length})</TabsTrigger>
+                <TabsTrigger value="pending">New Orders ({pendingOrders.length})</TabsTrigger>
+                <TabsTrigger value="preparing">Preparing ({preparingOrders.length})</TabsTrigger>
+                <TabsTrigger value="ready">Ready ({readyOrders.length})</TabsTrigger>
               </TabsList>
 
               <div className="flex gap-2">
+                <Button variant="outline" onClick={openDisplayPage}>
+                  Display Page (Cooks View)
+                </Button>
                 
                 <Dialog open={isAddOrderOpen} onOpenChange={setIsAddOrderOpen}>
                   <DialogTrigger asChild>
@@ -271,9 +276,19 @@ TOTAL: ₵${order.total.toFixed(2)}
                               </p>
                             </div>
                           </div>
-                          <Button onClick={() => handleConfirmOrder(order.id)}>
-                            Confirm Order
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handlePrintOrder(order)}
+                            >
+                              <Printer className="h-4 w-4 mr-2" />
+                              Print
+                            </Button>
+                            <Button onClick={() => handleConfirmOrder(order.id)}>
+                              Accept & Start Preparing
+                            </Button>
+                          </div>
                         </div>
                         <div className="grid md:grid-cols-2 gap-4 mt-3">
                           {order.items.map((item: any, idx: number) => (
@@ -289,16 +304,16 @@ TOTAL: ₵${order.total.toFixed(2)}
               )}
             </TabsContent>
 
-            <TabsContent value="confirmed" className="mt-0">
-              {confirmedOrders.length === 0 ? (
-                <div className="text-center py-20 text-muted-foreground">No confirmed orders</div>
+            <TabsContent value="preparing" className="mt-0">
+              {preparingOrders.length === 0 ? (
+                <div className="text-center py-20 text-muted-foreground">No orders being prepared</div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {confirmedOrders.map((order) => (
-                    <div key={order.id} className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
+                  {preparingOrders.map((order) => (
+                    <div key={order.id} className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
                       <div className="flex items-center justify-between mb-3">
                         <div>
-                          <p className="font-bold">{order.id}</p>
+                          <p className="font-bold text-lg">{order.id}</p>
                           <p className="text-sm text-muted-foreground">{order.customer.name}</p>
                         </div>
                         <Button 
@@ -306,13 +321,12 @@ TOTAL: ₵${order.total.toFixed(2)}
                           variant="outline"
                           onClick={() => handlePrintOrder(order)}
                         >
-                          <Printer className="h-4 w-4 mr-2" />
-                          Print
+                          <Printer className="h-4 w-4" />
                         </Button>
                       </div>
                       <div className="space-y-2">
                         {order.items.map((item: any, idx: number) => (
-                          <div key={idx} className="text-sm">
+                          <div key={idx} className="text-sm font-medium">
                             {item.quantity}x {item.name}
                             {item.extras?.length > 0 && (
                               <p className="text-xs text-muted-foreground ml-4">+ {item.extras.join(', ')}</p>
@@ -324,7 +338,7 @@ TOTAL: ₵${order.total.toFixed(2)}
                         className="w-full mt-4" 
                         onClick={() => handleStatusUpdate(order.id, "ready")}
                       >
-                        Mark as Done
+                        Mark as Ready
                       </Button>
                     </div>
                   ))}
@@ -332,32 +346,30 @@ TOTAL: ₵${order.total.toFixed(2)}
               )}
             </TabsContent>
 
-            <TabsContent value="done" className="mt-0">
-              {filteredDoneOrders.length === 0 ? (
-                <div className="text-center py-20 text-muted-foreground">
-                  {searchQuery ? "No orders found" : "No completed orders"}
-                </div>
+            <TabsContent value="ready" className="mt-0">
+              {readyOrders.length === 0 ? (
+                <div className="text-center py-20 text-muted-foreground">No ready orders</div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredDoneOrders.map((order) => (
-                    <div key={order.id} className="border rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
+                  {readyOrders.map((order) => (
+                    <div key={order.id} className="border-2 border-green-500 rounded-lg p-4 bg-green-50 dark:bg-green-950/20">
                       <div className="flex items-center justify-between mb-3">
                         <div>
-                          <p className="font-bold">{order.id}</p>
+                          <p className="font-bold text-lg">{order.id}</p>
                           <p className="text-sm text-muted-foreground">{order.customer.name}</p>
+                          <p className="text-xs text-muted-foreground">{order.customer.phone}</p>
                         </div>
                       </div>
                       <div className="space-y-2">
                         {order.items.map((item: any, idx: number) => (
-                          <div key={idx} className="text-sm">
+                          <div key={idx} className="text-sm font-medium">
                             {item.quantity}x {item.name}
                           </div>
                         ))}
                       </div>
-                      <p className="text-sm font-bold mt-3">Total: ₵{order.total.toFixed(2)}</p>
+                      <p className="text-sm font-bold mt-3 text-right">Total: ₵{(order.total || 0).toFixed(2)}</p>
                       <Button 
                         className="w-full mt-4" 
-                        variant="outline"
                         onClick={() => handleRemoveOrder(order.id)}
                       >
                         Complete & Archive

@@ -22,7 +22,7 @@ export const HeroBanner = () => {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
 
   return (
-    <section className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden bg-black">
+    <section className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden bg-black">
       {banners.map((banner, index) => (
         <div
           key={index}

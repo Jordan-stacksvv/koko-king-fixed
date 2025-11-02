@@ -1,9 +1,35 @@
-# Convex Setup Guide for Koko King Multi-Restaurant System
+# Convex Backend Setup Guide for Koko King Multi-Restaurant System
 
-## Overview
-This guide provides complete instructions for integrating Convex into your Koko King restaurant ordering system. Convex will handle real-time order management, authentication, and data synchronization across multiple restaurant locations.
+This guide covers the complete Convex integration for the Koko King food delivery platform, including real-time orders, multi-branch management, authentication, and admin features.
 
----
+## System Architecture
+
+The system now has three user roles:
+1. **Kitchen Staff** - Handle incoming orders, mark as preparing, and mark as ready
+2. **Manager** - View completed orders, manage menu, track deliveries
+3. **Admin** - Oversee all branches, add new locations, view sales analytics
+
+## Features Implemented
+
+### Order Management
+- Real-time order notifications (sound + toast for new pending orders only)
+- Three-stage workflow: Pending → Preparing → Ready
+- Kitchen Display page for cooks to see active orders being prepared
+- Print receipt functionality
+- Search all orders by ID, customer name, or phone
+
+### Homepage Features
+- KFC-style banner carousel with custom images (reduced height for mobile)
+- Location selector showing "From" (restaurant) and "To" (delivery address)
+- Category carousel with food categories
+- Search box to filter menu items by name or description
+- Responsive grid layout (2 columns on mobile, 3 on desktop)
+
+### Admin Dashboard
+- View sales across all branches
+- Add and manage branch locations
+- Track performance metrics per branch
+- Overall business analytics
 
 ## Table of Contents
 1. [Prerequisites](#prerequisites)

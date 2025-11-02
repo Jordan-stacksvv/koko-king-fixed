@@ -1,4 +1,5 @@
 import { Restaurant } from "@/data/menuItems";
+import { toast } from "sonner";
 
 const GOOGLE_GEOLOCATION_URL = `https://www.googleapis.com/geolocation/v1/geolocate?key=${
   import.meta.env.VITE_GOOGLE_MAPS_API_KEY
@@ -10,14 +11,42 @@ const GOOGLE_GEOLOCATION_URL = `https://www.googleapis.com/geolocation/v1/geoloc
 export const requestUserLocation = async (): Promise<GeolocationPosition> => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
       reject(new Error("Geolocation not supported"));
       return;
     }
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 8000,
-      maximumAge: 0,
-    });
+
+    toast.info("Requesting your location...");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        toast.success("Location detected successfully!");
+        resolve(position);
+      },
+      (error) => {
+        let errorMessage = "Unable to get your location";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable. Please try again.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out. Please try again.";
+            break;
+        }
+        
+        toast.error(errorMessage);
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 0,
+      }
+    );
   });
 };
 

@@ -74,25 +74,45 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Completed Orders</CardTitle>
+            <CardTitle>Recent Completed Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {orders.filter((o: any) => o.status === "completed").length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No completed orders yet</p>
-              ) : (
-                orders.filter((o: any) => o.status === "completed").map((order: any) => (
-                  <div key={order.id} className="flex items-center justify-between p-2 text-sm border-b">
-                    <div className="flex-1">
-                      <p className="font-medium">{order.id}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(order.timestamp).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <p className="font-semibold">₵{order.total.toFixed(2)}</p>
-                  </div>
-                ))
-              )}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-2 font-semibold">Order ID</th>
+                    <th className="text-left p-2 font-semibold">Customer</th>
+                    <th className="text-left p-2 font-semibold">Date</th>
+                    <th className="text-right p-2 font-semibold">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.filter((o: any) => o.status === "completed").length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center py-8 text-muted-foreground">
+                        No completed orders yet
+                      </td>
+                    </tr>
+                  ) : (
+                    orders
+                      .filter((o: any) => o.status === "completed")
+                      .slice(0, 20)
+                      .map((order: any) => (
+                        <tr key={order.id} className="border-b hover:bg-muted/50">
+                          <td className="p-2 font-medium">{order.id}</td>
+                          <td className="p-2">{order.customer.name}</td>
+                          <td className="p-2 text-sm text-muted-foreground">
+                            {new Date(order.timestamp).toLocaleString()}
+                          </td>
+                          <td className="p-2 text-right font-semibold">
+                            ₵{(order.total || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>

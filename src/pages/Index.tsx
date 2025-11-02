@@ -1,17 +1,26 @@
 import { Navbar } from "@/components/Navbar";
 import { HeroBanner } from "@/components/HeroBanner";
 import { CategoryCarousel } from "@/components/CategoryCarousel";
+import { LocationSelector } from "@/components/LocationSelector";
 import { MenuItem } from "@/components/MenuItem";
 import { FloatingCart } from "@/components/FloatingCart";
+import { Footer } from "@/components/Footer";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { categories, menuItems, restaurants } from "@/data/menuItems";
 import { useState } from "react";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedRestaurant, setSelectedRestaurant] = useState(restaurants[0]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredItems = menuItems.filter((item) => {
     const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
-    return matchesCategory;
+    const matchesSearch = searchQuery === "" || 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
   });
 
   const handleCategoryClick = (categoryId: string) => {
@@ -26,9 +35,30 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroBanner />
+      
+      <LocationSelector 
+        selectedRestaurant={selectedRestaurant}
+        restaurants={restaurants}
+        onRestaurantChange={setSelectedRestaurant}
+      />
 
       <section className="py-8 bg-white">
         <CategoryCarousel categories={categories} onCategoryClick={handleCategoryClick} />
+      </section>
+
+      <section className="py-4 bg-background border-b">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search for dishes, categories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-12 text-base"
+            />
+          </div>
+        </div>
       </section>
 
       <section id="menu-section" className="py-8 bg-background">
@@ -84,7 +114,7 @@ const Index = () => {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-3">
                   {filteredItems.map((item) => (
                     <MenuItem key={item.id} {...item} />
                   ))}
@@ -96,6 +126,7 @@ const Index = () => {
       </section>
 
       <FloatingCart />
+      <Footer />
     </div>
   );
 };
