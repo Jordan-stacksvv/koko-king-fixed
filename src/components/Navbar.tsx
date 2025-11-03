@@ -56,9 +56,6 @@ export const Navbar = () => {
                 )}
               </Link>
             </Button>
-            <Button variant="outline" size="sm" asChild className="hidden sm:flex">
-              <Link to="/auth">Login</Link>
-            </Button>
             
             {/* Mobile Menu */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -96,13 +93,6 @@ export const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     Contact
-                  </Link>
-                  <Link 
-                    to="/auth" 
-                    className="mt-4"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Button className="w-full" size="lg">Login</Button>
                   </Link>
                 </nav>
               </SheetContent>

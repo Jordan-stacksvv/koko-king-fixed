@@ -1,850 +1,351 @@
-# Convex Backend Setup Guide for Koko King Multi-Restaurant System
+# Koko King Restaurant System - Complete Setup Guide
 
-This guide covers the complete Convex integration for the Koko King food delivery platform, including real-time orders, multi-branch management, authentication, and admin features.
+## System Overview
 
-## System Architecture
+Koko King is a comprehensive restaurant management system with three user roles:
+- **Kitchen Staff**: Handle incoming orders and food preparation
+- **Manager**: Oversee branch operations, menu, and sales
+- **Admin**: Control all branches, analytics, and system-wide settings
 
-The system now has three user roles:
-1. **Kitchen Staff** - Handle incoming orders through a 4-stage workflow
-2. **Manager** - View all orders (read-only), manage menu, track deliveries
-3. **Admin** - Oversee all branches, add new locations, view sales analytics
+## Getting Started
 
-## Features Implemented
-
-### Order Management
-- **Order IDs**: Short format (KK-XXXX) for easy reference
-- **Real-time notifications**: Sound + toast for new pending orders only (stops after acceptance)
-- **Four-stage kitchen workflow**:
-  1. **Pending** (New Orders) - Accept incoming orders
-  2. **Confirmed** - Print receipt + Start preparing
-  3. **Preparing** - Mark as done when ready
-  4. **Done** - Read-only list of completed orders
-- **Kitchen Display page** - Shows confirmed and preparing orders for cooks (separate screen)
-- **Print receipt functionality** - Available in confirmed stage
-- **Global search** - Search all orders by ID, customer name, or phone
-- **Manager orders view** - Read-only table view with click-to-see-details
-
-**Order Status Flow:**
-```
-Customer Places Order → "pending" status
-    ↓
-Kitchen Accepts → "confirmed" status (can print receipt)
-    ↓
-Kitchen Starts Preparing → "preparing" status (shown on cook's display)
-    ↓
-Kitchen Marks Done → "completed" status (archived in Done list)
-```
-
-**Notification Behavior:**
-- Sound and toast notification trigger ONLY when a new "pending" order arrives
-- Once kitchen accepts (moves to "confirmed"), notifications stop for that order
-- Each order ID is tracked to prevent duplicate notifications
-
-### Homepage Features
-- **KFC-style banner carousel** - Optimized heights (250px mobile, 320px tablet, 380px desktop)
-- **Location selector** - Shows "From" (restaurant) and "To" (delivery address)
-- **Category carousel** - Browse food categories with images
-- **Menu search box** - Filter items by name or description
-- **Responsive grid layout** - 2 columns on mobile, 3 on desktop
-- **Crown favicon** - Simple gold crown icon on white background
-
-### Admin Dashboard
-- Three separate login pages: Kitchen, Manager, and Admin
-- View sales across all branches
-- Add and manage branch locations
-- Track performance metrics per branch
-- Overall business analytics
-- Accessible via /admin/login
-
-## Table of Contents
-1. [Prerequisites](#prerequisites)
-2. [Project Setup](#project-setup)
-3. [Database Schema](#database-schema)
-4. [Authentication Setup](#authentication-setup)
-5. [Functions & Queries](#functions--queries)
-6. [Frontend Integration](#frontend-integration)
-7. [Real-time Order Updates](#real-time-order-updates)
-8. [Testing Guide](#testing-guide)
+### Initial Setup
+1. Clone or download the project
+2. Run `npm install` to install dependencies
+3. Run `npm run dev` to start the development server
+4. Access the app at `http://localhost:8080`
 
 ---
 
-## Prerequisites
-
-### Required Accounts & Tools
-- Node.js 16+ installed
-- Convex account (sign up at https://convex.dev)
-- Existing Koko King project
-
-### Installation
-```bash
-npm install convex
-npx convex dev
-```
-
----
-
-## Project Setup
-
-### Step 1: Initialize Convex
-```bash
-npx convex dev
-```
-This will:
-- Create a `convex/` directory in your project
-- Generate configuration files
-- Connect to your Convex dashboard
-
-### Step 2: Project Structure
-Create the following structure:
-```
-convex/
-├── schema.ts              # Database schema
-├── auth.config.ts         # Authentication configuration
-├── restaurants.ts         # Restaurant queries/mutations
-├── orders.ts             # Order management
-├── menuItems.ts          # Menu management
-├── users.ts              # User management
-└── http.ts               # HTTP endpoints
-```
-
----
-
-## Database Schema
-
-### File: `convex/schema.ts`
-```typescript
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
-
-export default defineSchema({
-  // Restaurants table
-  restaurants: defineTable({
-    name: v.string(),
-    address: v.string(),
-    phone: v.string(),
-    coordinates: v.object({
-      lat: v.number(),
-      lng: v.number(),
-    }),
-    isActive: v.boolean(),
-    operatingHours: v.object({
-      open: v.string(),
-      close: v.string(),
-    }),
-  })
-    .index("by_active", ["isActive"])
-    .searchIndex("search_name", {
-      searchField: "name",
-    }),
-
-  // Menu Items table
-  menuItems: defineTable({
-    restaurantId: v.id("restaurants"),
-    name: v.string(),
-    description: v.string(),
-    price: v.number(),
-    category: v.string(),
-    image: v.string(),
-    isAvailable: v.boolean(),
-    extras: v.optional(
-      v.array(
-        v.object({
-          name: v.string(),
-          price: v.number(),
-        })
-      )
-    ),
-  })
-    .index("by_restaurant", ["restaurantId"])
-    .index("by_category", ["category"])
-    .index("by_restaurant_and_category", ["restaurantId", "category"]),
-
-  // Orders table
-  orders: defineTable({
-    restaurantId: v.id("restaurants"),
-    customerId: v.optional(v.id("users")),
-    customerName: v.string(),
-    customerPhone: v.string(),
-    customerAddress: v.optional(v.string()),
-    items: v.array(
-      v.object({
-        menuItemId: v.id("menuItems"),
-        name: v.string(),
-        price: v.number(),
-        quantity: v.number(),
-        extras: v.optional(
-          v.array(
-            v.object({
-              name: v.string(),
-              price: v.number(),
-            })
-          )
-        ),
-      })
-    ),
-    subtotal: v.number(),
-    deliveryFee: v.number(),
-    total: v.number(),
-    deliveryMethod: v.union(v.literal("delivery"), v.literal("pickup")),
-    paymentMethod: v.string(),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("confirmed"),
-      v.literal("preparing"),
-      v.literal("ready"),
-      v.literal("out_for_delivery"),
-      v.literal("delivered"),
-      v.literal("cancelled")
-    ),
-    specialInstructions: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_restaurant", ["restaurantId"])
-    .index("by_customer", ["customerId"])
-    .index("by_status", ["status"])
-    .index("by_restaurant_and_status", ["restaurantId", "status"])
-    .index("by_created_at", ["createdAt"]),
-
-  // Users table (customers and staff)
-  users: defineTable({
-    name: v.string(),
-    email: v.string(),
-    phone: v.optional(v.string()),
-    role: v.union(
-      v.literal("customer"),
-      v.literal("kitchen"),
-      v.literal("manager"),
-      v.literal("admin")
-    ),
-    restaurantId: v.optional(v.id("restaurants")), // For kitchen/manager staff
-    addresses: v.optional(
-      v.array(
-        v.object({
-          label: v.string(),
-          address: v.string(),
-          coordinates: v.optional(
-            v.object({
-              lat: v.number(),
-              lng: v.number(),
-            })
-          ),
-        })
-      )
-    ),
-    isActive: v.boolean(),
-  })
-    .index("by_email", ["email"])
-    .index("by_role", ["role"])
-    .index("by_restaurant", ["restaurantId"]),
-
-  // Order notifications for staff
-  notifications: defineTable({
-    restaurantId: v.id("restaurants"),
-    orderId: v.id("orders"),
-    userId: v.id("users"),
-    message: v.string(),
-    isRead: v.boolean(),
-    createdAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_restaurant", ["restaurantId"])
-    .index("by_unread", ["userId", "isRead"]),
-});
-```
-
----
-
-## Authentication Setup
-
-### File: `convex/auth.config.ts`
-```typescript
-import { convexAuth } from "@convex-dev/auth/server";
-import { Password } from "@convex-dev/auth/providers/Password";
-import { DataModel } from "./_generated/dataModel";
-
-export const { auth, signIn, signOut, store } = convexAuth({
-  providers: [
-    Password({
-      profile(params) {
-        return {
-          email: params.email as string,
-          name: params.name as string,
-        };
-      },
-    }),
-  ],
-  callbacks: {
-    async createOrUpdateUser(ctx, args) {
-      const { email, name } = args;
-      
-      // Check if user exists
-      const existingUser = await ctx.db
-        .query("users")
-        .withIndex("by_email", (q) => q.eq("email", email))
-        .first();
-
-      if (existingUser) {
-        return existingUser._id;
-      }
-
-      // Create new customer user
-      const userId = await ctx.db.insert("users", {
-        email,
-        name: name || email.split("@")[0],
-        role: "customer",
-        isActive: true,
-      });
-
-      return userId;
-    },
-  },
-});
-```
-
----
-
-## Functions & Queries
-
-### File: `convex/restaurants.ts`
-```typescript
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
-
-// Get nearest restaurant based on coordinates
-export const getNearestRestaurant = query({
-  args: {
-    userLat: v.number(),
-    userLng: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const restaurants = await ctx.db
-      .query("restaurants")
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .collect();
-
-    // Calculate distances using Haversine formula
-    const restaurantsWithDistance = restaurants.map((restaurant) => {
-      const distance = calculateDistance(
-        args.userLat,
-        args.userLng,
-        restaurant.coordinates.lat,
-        restaurant.coordinates.lng
-      );
-      return { ...restaurant, distance };
-    });
-
-    // Sort by distance and return nearest
-    return restaurantsWithDistance.sort((a, b) => a.distance - b.distance)[0];
-  },
-});
-
-// Get all active restaurants
-export const listRestaurants = query({
-  handler: async (ctx) => {
-    return await ctx.db
-      .query("restaurants")
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .collect();
-  },
-});
-
-// Helper function to calculate distance
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Radius of Earth in km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function toRad(degrees: number): number {
-  return degrees * (Math.PI / 180);
-}
-```
-
-### File: `convex/menuItems.ts`
-```typescript
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
-
-// Get menu items for a specific restaurant
-export const getMenuByRestaurant = query({
-  args: {
-    restaurantId: v.id("restaurants"),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("menuItems")
-      .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId))
-      .filter((q) => q.eq(q.field("isAvailable"), true))
-      .collect();
-  },
-});
-
-// Get menu items by category
-export const getMenuByCategory = query({
-  args: {
-    restaurantId: v.id("restaurants"),
-    category: v.string(),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("menuItems")
-      .withIndex("by_restaurant_and_category", (q) =>
-        q.eq("restaurantId", args.restaurantId).eq("category", args.category)
-      )
-      .filter((q) => q.eq(q.field("isAvailable"), true))
-      .collect();
-  },
-});
-
-// Add menu item (manager only)
-export const addMenuItem = mutation({
-  args: {
-    restaurantId: v.id("restaurants"),
-    name: v.string(),
-    description: v.string(),
-    price: v.number(),
-    category: v.string(),
-    image: v.string(),
-    extras: v.optional(v.array(v.object({ name: v.string(), price: v.number() }))),
-  },
-  handler: async (ctx, args) => {
-    // TODO: Add authentication check for manager role
-    return await ctx.db.insert("menuItems", {
-      ...args,
-      isAvailable: true,
-    });
-  },
-});
-
-// Update menu item
-export const updateMenuItem = mutation({
-  args: {
-    id: v.id("menuItems"),
-    name: v.optional(v.string()),
-    description: v.optional(v.string()),
-    price: v.optional(v.number()),
-    isAvailable: v.optional(v.boolean()),
-  },
-  handler: async (ctx, args) => {
-    const { id, ...updates } = args;
-    return await ctx.db.patch(id, updates);
-  },
-});
-```
-
-### File: `convex/orders.ts`
-```typescript
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
-
-// Create new order
-export const createOrder = mutation({
-  args: {
-    restaurantId: v.id("restaurants"),
-    customerName: v.string(),
-    customerPhone: v.string(),
-    customerAddress: v.optional(v.string()),
-    items: v.array(
-      v.object({
-        menuItemId: v.id("menuItems"),
-        name: v.string(),
-        price: v.number(),
-        quantity: v.number(),
-        extras: v.optional(v.array(v.object({ name: v.string(), price: v.number() }))),
-      })
-    ),
-    subtotal: v.number(),
-    deliveryFee: v.number(),
-    total: v.number(),
-    deliveryMethod: v.union(v.literal("delivery"), v.literal("pickup")),
-    paymentMethod: v.string(),
-    specialInstructions: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const now = Date.now();
-    
-    const orderId = await ctx.db.insert("orders", {
-      ...args,
-      status: "pending",
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    // Notify restaurant staff
-    const staff = await ctx.db
-      .query("users")
-      .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId))
-      .filter((q) => 
-        q.or(
-          q.eq(q.field("role"), "kitchen"),
-          q.eq(q.field("role"), "manager")
-        )
-      )
-      .collect();
-
-    for (const staffMember of staff) {
-      await ctx.db.insert("notifications", {
-        restaurantId: args.restaurantId,
-        orderId,
-        userId: staffMember._id,
-        message: `New order from ${args.customerName}`,
-        isRead: false,
-        createdAt: now,
-      });
-    }
-
-    return orderId;
-  },
-});
-
-// Get orders for a restaurant
-export const getRestaurantOrders = query({
-  args: {
-    restaurantId: v.id("restaurants"),
-    status: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    let ordersQuery = ctx.db
-      .query("orders")
-      .withIndex("by_restaurant", (q) => q.eq("restaurantId", args.restaurantId));
-
-    if (args.status) {
-      ordersQuery = ordersQuery.filter((q) => q.eq(q.field("status"), args.status));
-    }
-
-    return await ordersQuery.order("desc").take(100);
-  },
-});
-
-// Update order status
-export const updateOrderStatus = mutation({
-  args: {
-    orderId: v.id("orders"),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("confirmed"),
-      v.literal("preparing"),
-      v.literal("ready"),
-      v.literal("out_for_delivery"),
-      v.literal("delivered"),
-      v.literal("cancelled")
-    ),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.orderId, {
-      status: args.status,
-      updatedAt: Date.now(),
-    });
-  },
-});
-
-// Get customer order history
-export const getCustomerOrders = query({
-  args: {
-    customerId: v.id("users"),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("orders")
-      .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
-      .order("desc")
-      .collect();
-  },
-});
-```
-
----
-
-## Frontend Integration
-
-### Step 1: Install Convex Client
-Already installed, just need to configure.
-
-### Step 2: Update `src/main.tsx`
-```typescript
-import { ConvexProvider, ConvexReactClient } from "convex/react";
-
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
-
-// Wrap your app with ConvexProvider
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <ConvexProvider client={convex}>
-      <App />
-    </ConvexProvider>
-  </React.StrictMode>
-);
-```
-
-### Step 3: Environment Variables
-Create `.env.local`:
-```
-VITE_CONVEX_URL=https://your-deployment.convex.cloud
-```
-
-### Step 4: Pages to Update
-
-#### **src/pages/Index.tsx**
-Replace localStorage geolocation with Convex:
-```typescript
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-
-const Index = () => {
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  
-  const nearestRestaurant = useQuery(
-    api.restaurants.getNearestRestaurant,
-    userLocation ? { userLat: userLocation.lat, userLng: userLocation.lng } : "skip"
-  );
-
-  const menuItems = useQuery(
-    api.menuItems.getMenuByRestaurant,
-    nearestRestaurant ? { restaurantId: nearestRestaurant._id } : "skip"
-  );
-
-  // ... rest of component
-};
-```
-
-#### **src/pages/Menu.tsx**
-```typescript
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-
-const Menu = () => {
-  const restaurantId = localStorage.getItem("selectedRestaurantId");
-  
-  const menuItems = useQuery(
-    api.menuItems.getMenuByRestaurant,
-    restaurantId ? { restaurantId: restaurantId as any } : "skip"
-  );
-
-  // ... rest of component
-};
-```
-
-#### **src/pages/Checkout.tsx**
-```typescript
-import { useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-
-const Checkout = () => {
-  const createOrder = useMutation(api.orders.createOrder);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const restaurantId = localStorage.getItem("selectedRestaurantId");
-    
-    try {
-      const orderId = await createOrder({
-        restaurantId: restaurantId as any,
-        customerName: formData.name,
-        customerPhone: formData.phone,
-        customerAddress: deliveryMethod === "delivery" ? formData.address : undefined,
-        items: cart.map((item: any) => ({
-          menuItemId: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          extras: item.extras,
-        })),
-        subtotal,
-        deliveryFee,
-        total,
-        deliveryMethod,
-        paymentMethod,
-        specialInstructions: formData.notes || undefined,
-      });
-
-      localStorage.removeItem("cart");
-      toast.success("Order placed successfully!");
-      navigate("/");
-    } catch (error) {
-      toast.error("Failed to place order");
-    }
-  };
-
-  // ... rest of component
-};
-```
-
-#### **src/pages/kitchen/Orders.tsx**
-```typescript
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-
-const Orders = () => {
-  const restaurantId = localStorage.getItem("kitchenRestaurantId");
-  
-  const orders = useQuery(
-    api.orders.getRestaurantOrders,
-    restaurantId ? { restaurantId: restaurantId as any } : "skip"
-  );
-
-  const updateStatus = useMutation(api.orders.updateOrderStatus);
-
-  const handleStatusUpdate = async (orderId: string, status: string) => {
-    await updateStatus({ orderId: orderId as any, status: status as any });
-    toast.success("Order status updated");
-  };
-
-  // ... rest of component
-};
-```
-
-#### **src/pages/manager/Dashboard.tsx**
-```typescript
-import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-
-const Dashboard = () => {
-  const restaurantId = localStorage.getItem("managerRestaurantId");
-  
-  const orders = useQuery(
-    api.orders.getRestaurantOrders,
-    restaurantId ? { restaurantId: restaurantId as any } : "skip"
-  );
-
-  // Calculate stats from orders
-  const todayOrders = orders?.filter(order => {
-    const orderDate = new Date(order.createdAt);
-    const today = new Date();
-    return orderDate.toDateString() === today.toDateString();
-  });
-
-  const revenue = todayOrders?.reduce((sum, order) => sum + order.total, 0) || 0;
-
-  // ... rest of component
-};
-```
-
-#### **src/pages/manager/MenuManagement.tsx**
-```typescript
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-
-const MenuManagement = () => {
-  const restaurantId = localStorage.getItem("managerRestaurantId");
-  
-  const menuItems = useQuery(
-    api.menuItems.getMenuByRestaurant,
-    restaurantId ? { restaurantId: restaurantId as any } : "skip"
-  );
-
-  const addItem = useMutation(api.menuItems.addMenuItem);
-  const updateItem = useMutation(api.menuItems.updateMenuItem);
-
-  // ... rest of component
-};
-```
-
----
-
-## Real-time Order Updates
-
-Convex automatically provides real-time updates. No additional setup needed!
-
-```typescript
-// Orders will automatically update when status changes
-const orders = useQuery(api.orders.getRestaurantOrders, { restaurantId });
-
-// This will re-render automatically when any order updates
-```
-
----
-
-## Testing Guide
-
-### 1. Test Restaurant Selection
-- Open homepage
-- Allow location access
-- Verify nearest restaurant is selected
-
-### 2. Test Order Flow
-- Browse menu from selected restaurant
+## Customer Flow
+
+### 1. Homepage (`/`)
+- View rotating banner images
+- Select "From" and "To" locations for delivery
+- Browse food categories via carousel
+- Search menu items using the search box
+- Click on menu items to view details and add to cart
+
+### 2. Menu Page (`/menu`)
+- Browse all available menu items
+- Filter by category
 - Add items to cart
-- Complete checkout
-- Verify order appears in kitchen dashboard
+- View item details and prices
 
-### 3. Test Kitchen Dashboard
-- Login to kitchen access
-- See real-time orders
-- Update order status
-- Verify status updates reflect immediately
-
-### 4. Test Manager Dashboard
-- Login to manager access
-- View orders and statistics
-- Manage menu items
-- View deliveries
+### 3. Cart & Checkout (`/cart`, `/checkout`)
+- Review cart items
+- Adjust quantities
+- Proceed to checkout
+- Complete order with delivery details
 
 ---
 
-## Next Steps
+## Kitchen Staff Access
 
-1. **Deploy to Production**
-   ```bash
-   npx convex deploy
-   ```
+### Login
+- Navigate to **Footer → Staff Access → Kitchen Login**
+- Login URL: `/kitchen/login`
+- Default credentials: `kitchen / kitchen123`
 
-2. **Add Authentication UI**
-   - Implement login/signup forms
-   - Add role-based access control
+### Order Management Flow (`/kitchen/orders`)
 
-3. **Add Payment Integration**
-   - Integrate Mobile Money API
-   - Add card payment processing
+The kitchen system follows a 4-stage order workflow:
 
-4. **Add Notifications**
-   - Push notifications for new orders
-   - SMS notifications for customers
+#### Stage 1: PENDING ORDERS
+- New orders appear here first
+- Sound notification plays once for each new order
+- Toast notification appears once
+- Click **"Confirm Order"** to move to next stage
+
+#### Stage 2: CONFIRMED ORDERS  
+- Orders waiting to be prepared
+- Print button available for order tickets
+- Click **"Start Preparing"** to move order to preparing stage
+
+#### Stage 3: PREPARING ORDERS
+- Active orders being cooked
+- Click **"Mark as Done"** when order is complete
+- Moves to Done list
+
+#### Stage 4: DONE ORDERS
+- Read-only list of completed orders
+- Shows all finished orders for the day
+- No actions available - historical record only
+
+### Kitchen Display Screen (`/kitchen/display`)
+- Open via **"Open Display Page"** button in Kitchen Orders
+- Designed for kitchen staff/cooks to view
+- Shows only **CONFIRMED** orders waiting to be prepared
+- Updates in real-time as orders are confirmed
+- Orders disappear when marked as "Start Preparing"
+- Best viewed on a separate monitor/tablet
+
+### Walk-in Orders (`/kitchen/orders` - Add Order Form)
+- Use search box to find menu items
+- Click on items from mini-menu to add
+- Adjust quantities with +/- buttons
+- Complete customer details
+- Submit walk-in order
 
 ---
 
-## Support & Resources
+## Manager Access
 
-- Convex Documentation: https://docs.convex.dev
-- Convex Dashboard: https://dashboard.convex.dev
-- Community Discord: https://convex.dev/community
+### Login
+- Navigate to **Footer → Staff Access → Manager Login**
+- Login URL: `/manager/login`
+- Default credentials: `manager / manager123`
+
+### Manager Dashboard (`/manager/dashboard`)
+- View branch statistics
+- Monitor daily revenue
+- Track order counts
+- Quick overview of branch performance
+
+### Orders View (`/manager/orders`)
+- **READ ONLY** - No actions available
+- View completed orders in list format
+- Click on any order to see full details
+- Filter orders by date
+- Export/print order reports
+
+### Menu Management (`/manager/menu`)
+- View all menu items
+- Edit existing items:
+  - Update name, price, category
+  - Change or add item images via Image URL field
+  - Toggle item availability
+- Add new menu items
+- Delete items no longer offered
+
+### Deliveries (`/manager/deliveries`)
+- Track active deliveries
+- View delivery routes
+- Update delivery status
+
+### Payments (`/manager/payments`)
+- View payment records
+- Track payment methods
+- Generate payment reports
+
+### Settings (`/manager/settings`)
+- Branch-specific settings
+- Notification preferences
+- Operating hours configuration
 
 ---
 
-## Important Notes
+## Admin Access (Super Admin)
 
-- Each restaurant has isolated access to their own orders
-- Real-time updates happen automatically
-- All data is secured and validated
-- Geolocation determines which restaurant receives orders
-- Kitchen and manager dashboards are restaurant-specific
+### Login
+- Navigate to **Footer → Staff Access → Admin Login**
+- Login URL: `/admin/login`
+- Default credentials: `admin / admin123`
+
+### Admin Dashboard (`/admin/dashboard`)
+- **Overview Cards:**
+  - Total Revenue (all branches combined)
+  - Total Orders across all locations
+  - Top Selling Item system-wide
+  - Highest Earning Branch
+
+- **Charts & Analytics:**
+  - Revenue by Branch (bar chart)
+  - Top Selling Items (pie chart)
+  - Branch performance comparison
+
+- **Branch Performance List:**
+  - Click on any branch to view detailed analytics
+  - Shows revenue and order count per branch
+
+### Branch Management (`/admin/branches`)
+- **View All Branches:**
+  - Grid/list view of all restaurant locations
+  - Quick stats for each branch
+
+- **Add New Branch:**
+  - Branch name
+  - Full address/location
+  - Phone number
+  - Manager assignment
+
+- **Branch Details (click on any branch):**
+  - Overview tab: Branch information, stats
+  - Recent Orders tab: Last 10 orders from this branch
+  - Top Items tab: Best-selling items at this location
+  - View total revenue, order count, average order value
+
+- **Delete Branch:**
+  - Remove underperforming or closed locations
+
+### Sales Analytics (`/admin/analytics`)
+- **Daily/Weekly/Monthly Views:**
+  - Sales trends over time (line chart)
+  - Revenue breakdown (bar chart)
+  - Order frequency analysis
+
+- **Performance Metrics:**
+  - Compare branches
+  - Identify peak hours
+  - Track growth trends
+
+### All Orders (`/admin/orders`)
+- View orders from ALL branches
+- Filter by:
+  - Branch
+  - Date range
+  - Order status
+- Click to view full order details
+- Export order data
+
+### Menu Management (`/admin/menu`)
+- **System-Wide Menu Control:**
+  - View all menu items across all branches
+  - Add new items available to all branches
+  - Edit item details (name, price, category, image)
+  - Delete items from system
+
+- **Branch-Specific Items:**
+  - Assign items to specific branches
+  - Manage location-specific menu variations
+
+- **Menu Categories:**
+  - Pizza, Wraps, Sandwiches
+  - Sides, Drinks, Salads
+  - Combo Meals, Specials
 
 ---
 
-## File Summary for Quick Reference
+## Order Status Flow
 
-**Files to Create:**
-- `convex/schema.ts`
-- `convex/auth.config.ts`
-- `convex/restaurants.ts`
-- `convex/orders.ts`
-- `convex/menuItems.ts`
-- `.env.local`
+```
+PENDING → CONFIRMED → PREPARING → READY → COMPLETED
+```
 
-**Files to Update:**
-- `src/main.tsx`
-- `src/pages/Index.tsx`
-- `src/pages/Menu.tsx`
-- `src/pages/Checkout.tsx`
-- `src/pages/kitchen/Orders.tsx`
-- `src/pages/manager/Dashboard.tsx`
-- `src/pages/manager/MenuManagement.tsx`
-- `src/pages/manager/Orders.tsx`
+1. **PENDING**: New order received, notification sent
+2. **CONFIRMED**: Kitchen staff acknowledged order
+3. **PREPARING**: Food is being cooked
+4. **READY**: Order complete, ready for pickup/delivery  
+5. **COMPLETED**: Order delivered/picked up
 
-Good luck with your Convex integration! 🚀
+---
+
+## Data Storage
+
+All data is stored in browser localStorage:
+- `orders`: All customer orders
+- `branches`: Restaurant locations
+- `customMenuItems`: Admin-added menu items
+- `cart`: Customer shopping cart
+- `kitchenAuth`: Kitchen login state
+- `managerAuth`: Manager login state
+- `adminAuth`: Admin login state
+
+### Order ID Format
+- Orders use format: `KK-XXXX` (e.g., KK-1234)
+- Short, easy to communicate
+- Sequential numbering
+
+---
+
+## Navigation Structure
+
+### Public Pages
+- `/` - Homepage
+- `/menu` - Full menu
+- `/cart` - Shopping cart
+- `/checkout` - Order checkout
+- `/contact` - Contact information
+- `/store-locator` - Find locations
+
+### Kitchen Pages
+- `/kitchen/login` - Kitchen staff login
+- `/kitchen/orders` - Order management
+- `/kitchen/display` - Kitchen display screen
+
+### Manager Pages
+- `/manager/login` - Manager login
+- `/manager/dashboard` - Overview
+- `/manager/orders` - Order history (read-only)
+- `/manager/menu` - Menu editing
+- `/manager/deliveries` - Delivery tracking
+- `/manager/payments` - Payment records
+- `/manager/settings` - Branch settings
+
+### Admin Pages
+- `/admin/login` - Admin login
+- `/admin/dashboard` - System overview
+- `/admin/branches` - Branch management & analytics
+- `/admin/analytics` - Sales analytics
+- `/admin/orders` - All orders view
+- `/admin/menu` - Global menu management
+
+---
+
+## Key Features
+
+### Customer Features
+- Location-based ordering (From/To)
+- Search functionality
+- Category browsing
+- Shopping cart
+- Order tracking
+
+### Kitchen Features
+- Real-time order notifications (plays once per order)
+- Multi-stage workflow
+- Order printing
+- Walk-in order entry
+- Dedicated display screen for cooks
+
+### Manager Features
+- Read-only order viewing
+- Menu editing with image updates
+- Branch performance monitoring
+- Delivery tracking
+
+### Admin Features
+- Multi-branch overview
+- Detailed branch analytics
+- Sales trends and charts
+- System-wide menu control
+- Branch creation and management
+- Top items and revenue tracking
+
+---
+
+## Default Login Credentials
+
+**Kitchen Staff:**
+- Username: `kitchen`
+- Password: `kitchen123`
+
+**Manager:**
+- Username: `manager`
+- Password: `manager123`
+
+**Admin:**
+- Username: `admin`
+- Password: `admin123`
+
+*Change these in production for security!*
+
+---
+
+## Troubleshooting
+
+### Orders not appearing?
+- Check localStorage for `orders` key
+- Verify order status matches the view you're in
+
+### Notifications repeating?
+- Fixed: Notifications now only play once per new pending order
+
+### Can't access admin pages?
+- Verify you're logged in via `/admin/login`
+- Check localStorage for `adminAuth: "true"`
+
+---
+
+**Last Updated**: 2025
+**Version**: 2.0

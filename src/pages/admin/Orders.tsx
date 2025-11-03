@@ -1,0 +1,227 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { TrendingUp, Store, ShoppingCart, Package, BarChart, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+const AdminOrders = () => {
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  useEffect(() => {
+    // Check admin auth
+    if (localStorage.getItem("adminAuth") !== "true") {
+      navigate("/admin/login");
+      return;
+    }
+
+    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const allBranches = JSON.parse(localStorage.getItem("branches") || "[]");
+    
+    // Sort orders by date (newest first)
+    const sortedOrders = allOrders.sort((a: any, b: any) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    
+    setOrders(sortedOrders);
+    setBranches(allBranches);
+  }, [navigate]);
+
+  const getBranchName = (branchId: string) => {
+    const branch = branches.find(b => b.id === branchId);
+    return branch?.name || "Unknown";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending": return "bg-yellow-500";
+      case "confirmed": return "bg-blue-500";
+      case "preparing": return "bg-orange-500";
+      case "ready": return "bg-green-500";
+      case "completed": return "bg-purple-500";
+      default: return "bg-gray-500";
+    }
+  };
+
+  const handleViewDetails = (order: any) => {
+    setSelectedOrder(order);
+    setIsDetailOpen(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminAuth");
+    navigate("/admin/login");
+  };
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <Sidebar className="border-r">
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => navigate("/admin/dashboard")}>
+                      <TrendingUp className="h-4 w-4" />
+                      <span>Dashboard</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => navigate("/admin/branches")}>
+                      <Store className="h-4 w-4" />
+                      <span>Branches</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => navigate("/admin/analytics")}>
+                      <BarChart className="h-4 w-4" />
+                      <span>Sales Analytics</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => navigate("/admin/orders")} className="bg-primary/10">
+                      <ShoppingCart className="h-4 w-4" />
+                      <span>All Orders</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => navigate("/admin/menu")}>
+                      <Package className="h-4 w-4" />
+                      <span>Menu Management</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={handleLogout} className="text-destructive">
+                      <span>Logout</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+
+        <main className="flex-1 overflow-auto">
+          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-6">
+            <SidebarTrigger />
+            <h1 className="text-lg font-semibold">All Orders</h1>
+          </header>
+
+          <div className="p-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Order History ({orders.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {orders.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No orders yet</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Branch</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell className="font-mono text-sm">{order.id}</TableCell>
+                          <TableCell>{getBranchName(order.branchId)}</TableCell>
+                          <TableCell>{order.customer?.name || "Walk-in"}</TableCell>
+                          <TableCell className="text-sm">
+                            {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(order.status)}>
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">₵{order.total.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="ghost" onClick={() => handleViewDetails(order)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+
+      {/* Order Details Dialog */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Order Details - {selectedOrder?.id}</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Branch</p>
+                  <p className="font-semibold">{getBranchName(selectedOrder.branchId)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge className={getStatusColor(selectedOrder.status)}>{selectedOrder.status}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Customer</p>
+                  <p className="font-semibold">{selectedOrder.customer?.name || "Walk-in"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="font-semibold">
+                    {new Date(selectedOrder.createdAt).toLocaleDateString()}{" "}
+                    {new Date(selectedOrder.createdAt).toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Items</p>
+                <div className="space-y-2">
+                  {selectedOrder.items?.map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between p-2 bg-muted rounded">
+                      <span>{item.name} x{item.quantity}</span>
+                      <span className="font-semibold">₵{(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Total</span>
+                  <span>₵{selectedOrder.total.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </SidebarProvider>
+  );
+};
+
+export default AdminOrders;

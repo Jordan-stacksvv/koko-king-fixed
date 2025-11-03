@@ -8,10 +8,9 @@ const Display = () => {
   useEffect(() => {
     const loadOrders = () => {
       const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-      const active = orders.filter((order: any) => 
-        order.status === "preparing" || order.status === "confirmed"
-      );
-      setActiveOrders(active);
+      // Show only confirmed orders waiting to be prepared
+      const confirmedOrders = orders.filter((order: any) => order.status === "confirmed");
+      setActiveOrders(confirmedOrders);
     };
 
     loadOrders();
@@ -22,7 +21,7 @@ const Display = () => {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">Kitchen Display - Orders Being Prepared</h1>
+        <h1 className="text-4xl font-bold text-center mb-8">Kitchen Display - New Orders to Prepare</h1>
         
         {activeOrders.length === 0 ? (
           <div className="text-center text-2xl text-muted-foreground py-20">
