@@ -46,6 +46,10 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="default" size="sm" asChild className="hidden md:flex">
+              <Link to="/auth">Login</Link>
+            </Button>
+            
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link to="/cart">
                 <ShoppingCart className="h-5 w-5" />
@@ -66,6 +70,13 @@ export const Navbar = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <nav className="flex flex-col gap-4 mt-8">
+                  <Link 
+                    to="/auth" 
+                    className="text-lg font-medium py-2 px-4 rounded-lg bg-primary text-primary-foreground text-center mb-2"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Login
+                  </Link>
                   <Link 
                     to="/" 
                     className={`text-lg font-medium py-2 px-4 rounded-lg transition-colors ${isActive("/") ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}

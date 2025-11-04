@@ -33,7 +33,7 @@ export const HeroBanner = () => {
           <img
             src={banner}
             alt={`Banner ${index + 1}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         </div>
       ))}

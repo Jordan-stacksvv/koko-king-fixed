@@ -8,12 +8,30 @@ import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { categories, menuItems, restaurants } from "@/data/menuItems";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { requestUserLocation } from "@/lib/geolocation";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedRestaurant, setSelectedRestaurant] = useState(restaurants[0]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    // Auto-detect user location on first visit
+    const hasDetectedLocation = localStorage.getItem("locationDetected");
+    
+    if (!hasDetectedLocation) {
+      requestUserLocation().then((coords) => {
+        if (coords) {
+          // Find closest restaurant based on coordinates
+          // For demo purposes, we'll just set to first restaurant
+          // In production, calculate distance to each restaurant
+          localStorage.setItem("locationDetected", "true");
+          setSelectedRestaurant(restaurants[0]);
+        }
+      });
+    }
+  }, []);
 
   const filteredItems = menuItems.filter((item) => {
     const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
