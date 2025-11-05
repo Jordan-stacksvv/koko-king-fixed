@@ -35,6 +35,10 @@ import AdminMenu from "./pages/admin/Menu";
 // Kitchen Display
 import KitchenDisplay from "./pages/kitchen/Display";
 
+// Driver Routes
+import DriverLogin from "./pages/driver/Login";
+import DriverDeliveries from "./pages/driver/Deliveries";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,6 +80,10 @@ const App = () => (
           <Route path="/admin/analytics" element={<Analytics />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/menu" element={<AdminMenu />} />
+
+          {/* Driver Routes */}
+          <Route path="/driver/login" element={<DriverLogin />} />
+          <Route path="/driver/deliveries" element={<DriverDeliveries />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
