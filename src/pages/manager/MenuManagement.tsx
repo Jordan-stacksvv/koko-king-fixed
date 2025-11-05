@@ -136,9 +136,22 @@ const MenuManagement = () => {
                   <Input
                     value={editingItem.image}
                     onChange={(e) => setEditingItem({ ...editingItem, image: e.target.value })}
-                    placeholder="Enter image URL or upload image"
+                    placeholder="Enter image URL"
                   />
-                  <p className="text-xs text-muted-foreground">You can paste an image URL or upload to a service</p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          toast.info("Upload to an image hosting service, then paste URL above");
+                        }
+                      }}
+                      className="text-sm"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Upload to hosting service or paste image URL</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Item Name</Label>

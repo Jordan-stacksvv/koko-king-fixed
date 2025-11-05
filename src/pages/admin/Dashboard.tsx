@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { DollarSign, TrendingUp, ShoppingCart, Award, Store, Package } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import kokoKingLogo from "@/assets/koko-king-logo.png";
+import { initializeBranches } from "@/data/defaultBranches";
 
 const COLORS = ['#E94E1B', '#FFA500', '#FFD700', '#32CD32', '#4169E1'];
 
@@ -20,6 +22,9 @@ const AdminDashboard = () => {
       navigate("/admin/login");
       return;
     }
+
+    // Initialize branches
+    initializeBranches();
 
     // Load data
     const branches = JSON.parse(localStorage.getItem("branches") || "[]");
@@ -78,6 +83,14 @@ const AdminDashboard = () => {
         <Sidebar className="border-r">
           <SidebarContent>
             <SidebarGroup>
+              <div className="px-4 py-3">
+                <img 
+                  src={kokoKingLogo} 
+                  alt="Koko King" 
+                  className="h-12 w-auto cursor-pointer"
+                  onClick={() => window.location.reload()}
+                />
+              </div>
               <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>

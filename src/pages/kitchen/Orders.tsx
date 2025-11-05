@@ -86,6 +86,7 @@ const KitchenOrders = () => {
 KOKO KING EXPRESS
 ==================
 Order ID: ${order.id}
+Type: ${order.orderType === "walk-in" ? "WALK-IN" : "ONLINE"}
 Date: ${new Date(order.timestamp).toLocaleString()}
 Customer: ${order.customer.name}
 Phone: ${order.customer.phone}
@@ -221,12 +222,23 @@ TOTAL: ₵${order.total.toFixed(2)}
             {pendingOrders.length === 0 ? (
               <div className="text-center py-20 text-muted-foreground">No new orders</div>
             ) : (
-              <div className="grid gap-4">
-                {pendingOrders.map((order) => (
-                  <div key={order.id} className="border-2 border-orange-500 rounded-lg p-4 bg-orange-50 dark:bg-orange-950/20 animate-pulse">
+              <div className="space-y-3">
+                {[...pendingOrders].sort((a, b) => {
+                  if (a.orderType === "walk-in" && b.orderType !== "walk-in") return -1;
+                  if (a.orderType !== "walk-in" && b.orderType === "walk-in") return 1;
+                  return 0;
+                }).map((order) => (
+                  <div key={order.id} className="border-2 border-orange-500 rounded-lg p-4 bg-orange-50 dark:bg-orange-950/20">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p className="font-bold text-lg">{order.id}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-lg">{order.id}</p>
+                          <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                            order.orderType === "walk-in" ? "bg-red-500 text-white" : "bg-blue-500 text-white"
+                          }`}>
+                            {order.orderType === "walk-in" ? "WALK-IN" : "ONLINE"}
+                          </span>
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           {order.customer.name} • {new Date(order.timestamp).toLocaleTimeString()}
                         </p>
@@ -248,70 +260,126 @@ TOTAL: ₵${order.total.toFixed(2)}
             )}
           </TabsContent>
 
-          {/* Confirm Orders Tab */}
+          {/* Confirm Orders Tab - Split View */}
           <TabsContent value="confirmed" className="mt-0">
             {confirmOrders.length === 0 ? (
               <div className="text-center py-20 text-muted-foreground">No orders to confirm</div>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
-                {confirmOrders.map((order) => (
-                  <div key={order.id} className="border-2 border-yellow-500 rounded-lg p-4 bg-yellow-50 dark:bg-yellow-950/20">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="font-bold text-lg">{order.id}</p>
-                        <p className="text-sm text-muted-foreground">{order.customer.name}</p>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handlePrintOrder(order)}
-                      >
-                        <Printer className="h-4 w-4 mr-2" />
-                        Print
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      {order.items.map((item: any, idx: number) => (
-                        <div key={idx} className="text-sm font-medium">
-                          {item.quantity}x {item.name}
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Walk-in Orders */}
+                <div>
+                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <span className="bg-red-500 text-white px-3 py-1 rounded text-sm">WALK-IN</span>
+                    Orders ({confirmOrders.filter((o: any) => o.orderType === "walk-in").length})
+                  </h3>
+                  <div className="space-y-3">
+                    {confirmOrders.filter((o: any) => o.orderType === "walk-in").map((order) => (
+                      <div key={order.id} className="border-2 border-yellow-500 rounded-lg p-4 bg-yellow-50 dark:bg-yellow-950/20">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="font-bold text-lg">{order.id}</p>
+                            <p className="text-sm text-muted-foreground">{order.customer.name}</p>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handlePrintOrder(order)}
+                          >
+                            <Printer className="h-4 w-4 mr-2" />
+                            Print
+                          </Button>
                         </div>
-                      ))}
-                    </div>
-                    <Button 
-                      className="w-full mt-4" 
-                      onClick={() => handleStatusUpdate(order.id, "preparing")}
-                    >
-                      Start Preparing
-                    </Button>
+                        <div className="space-y-2">
+                          {order.items.map((item: any, idx: number) => (
+                            <div key={idx} className="text-sm font-medium">
+                              {item.quantity}x {item.name}
+                            </div>
+                          ))}
+                        </div>
+                        <Button 
+                          className="w-full mt-4" 
+                          onClick={() => handleStatusUpdate(order.id, "preparing")}
+                        >
+                          Start Preparing
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                {/* Online Orders */}
+                <div>
+                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <span className="bg-blue-500 text-white px-3 py-1 rounded text-sm">ONLINE</span>
+                    Orders ({confirmOrders.filter((o: any) => o.orderType !== "walk-in").length})
+                  </h3>
+                  <div className="space-y-3">
+                    {confirmOrders.filter((o: any) => o.orderType !== "walk-in").map((order) => (
+                      <div key={order.id} className="border-2 border-yellow-500 rounded-lg p-4 bg-yellow-50 dark:bg-yellow-950/20">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="font-bold text-lg">{order.id}</p>
+                            <p className="text-sm text-muted-foreground">{order.customer.name}</p>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handlePrintOrder(order)}
+                          >
+                            <Printer className="h-4 w-4 mr-2" />
+                            Print
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {order.items.map((item: any, idx: number) => (
+                            <div key={idx} className="text-sm font-medium">
+                              {item.quantity}x {item.name}
+                            </div>
+                          ))}
+                        </div>
+                        <Button 
+                          className="w-full mt-4" 
+                          onClick={() => handleStatusUpdate(order.id, "preparing")}
+                        >
+                          Start Preparing
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </TabsContent>
 
-          {/* Preparing Orders Tab */}
+          {/* Preparing Orders Tab - List Style */}
           <TabsContent value="preparing" className="mt-0">
             {preparingOrders.length === 0 ? (
               <div className="text-center py-20 text-muted-foreground">No orders being prepared</div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
                 {preparingOrders.map((order) => (
-                  <div key={order.id} className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
-                    <div className="flex items-center justify-between mb-3">
+                  <div key={order.id} className="flex items-center justify-between border-2 border-blue-500 rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
+                    <div className="flex items-center gap-4 flex-1">
                       <div>
-                        <p className="font-bold text-lg">{order.id}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-lg">{order.id}</p>
+                          <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                            order.orderType === "walk-in" ? "bg-red-500 text-white" : "bg-blue-500 text-white"
+                          }`}>
+                            {order.orderType === "walk-in" ? "WALK-IN" : "ONLINE"}
+                          </span>
+                        </div>
                         <p className="text-sm text-muted-foreground">{order.customer.name}</p>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      {order.items.map((item: any, idx: number) => (
-                        <div key={idx} className="text-sm font-medium">
-                          {item.quantity}x {item.name}
-                        </div>
-                      ))}
+                      <div className="flex gap-2 flex-wrap">
+                        {order.items.map((item: any, idx: number) => (
+                          <span key={idx} className="text-sm font-medium bg-background px-2 py-1 rounded">
+                            {item.quantity}x {item.name}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                     <Button 
-                      className="w-full mt-4" 
                       onClick={() => handleStatusUpdate(order.id, "completed")}
                     >
                       Mark as Done
@@ -331,25 +399,30 @@ TOTAL: ₵${order.total.toFixed(2)}
                 {completedOrders.map((order) => (
                   <div 
                     key={order.id} 
-                    className="border rounded-lg p-4 bg-card cursor-pointer hover:bg-accent"
+                    className="flex items-center justify-between border rounded-lg p-4 bg-card cursor-pointer hover:bg-accent"
                     onClick={() => setSelectedOrderForReceipt(order)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div>
+                        <div className="flex items-center gap-2">
                           <p className="font-bold">{order.id}</p>
-                          <p className="text-sm text-muted-foreground">{order.customer.name}</p>
+                          <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                            order.orderType === "walk-in" ? "bg-red-500 text-white" : "bg-blue-500 text-white"
+                          }`}>
+                            {order.orderType === "walk-in" ? "WALK-IN" : "ONLINE"}
+                          </span>
                         </div>
+                        <p className="text-sm text-muted-foreground">{order.customer.name}</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {new Date(order.timestamp).toLocaleString()}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold">₵{(order.total || 0).toFixed(2)}</p>
-                        <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
-                          Completed
-                        </span>
-                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">₵{(order.total || 0).toFixed(2)}</p>
+                      <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
+                        Completed
+                      </span>
                     </div>
                   </div>
                 ))}

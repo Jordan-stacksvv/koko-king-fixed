@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Plus, MapPin, Phone, Trash2, TrendingUp, Store, ShoppingCart, Package, BarChart, ArrowLeft } from "lucide-react";
+import { Plus, MapPin, Phone, Trash2, TrendingUp, Store, ShoppingCart, Package, BarChart, ArrowLeft, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import kokoKingLogo from "@/assets/koko-king-logo.png";
+import { initializeBranches } from "@/data/defaultBranches";
 
 const Branches = () => {
   const navigate = useNavigate();
@@ -31,6 +33,9 @@ const Branches = () => {
       navigate("/admin/login");
       return;
     }
+
+    // Initialize default branches
+    initializeBranches();
 
     const saved = JSON.parse(localStorage.getItem("branches") || "[]");
     const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
@@ -285,6 +290,14 @@ const Branches = () => {
         <Sidebar className="border-r">
           <SidebarContent>
             <SidebarGroup>
+              <div className="px-4 py-3">
+                <img 
+                  src={kokoKingLogo} 
+                  alt="Koko King" 
+                  className="h-12 w-auto cursor-pointer"
+                  onClick={() => window.location.reload()}
+                />
+              </div>
               <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>

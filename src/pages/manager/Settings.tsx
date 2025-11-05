@@ -101,9 +101,47 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        <Button onClick={handleSave} size="lg">
-          Save Changes
-        </Button>
+        <Card>
+          <CardHeader>
+            <CardTitle>Automation Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Auto-Confirm Orders</p>
+                <p className="text-sm text-muted-foreground">Automatically confirm new orders</p>
+              </div>
+              <Switch />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Auto-Assign Drivers</p>
+                <p className="text-sm text-muted-foreground">Automatically assign deliveries to available drivers</p>
+              </div>
+              <Switch />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Auto-Print Receipts</p>
+                <p className="text-sm text-muted-foreground">Automatically print receipts for confirmed orders</p>
+              </div>
+              <Switch />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">SMS Notifications</p>
+                <p className="text-sm text-muted-foreground">Send order updates via SMS to customers</p>
+              </div>
+              <Switch />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="sticky bottom-0 bg-background py-4 border-t">
+          <Button onClick={handleSave} size="lg" className="w-full md:w-auto">
+            Save Changes
+          </Button>
+        </div>
       </div>
     </KitchenLayout>
   );

@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { TrendingUp, Store, ShoppingCart, Package, BarChart as BarChartIcon } from "lucide-react";
+import { TrendingUp, Store, ShoppingCart, Package, BarChart as BarChartIcon, Settings } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import kokoKingLogo from "@/assets/koko-king-logo.png";
 
 const Analytics = () => {
   const navigate = useNavigate();
@@ -48,6 +49,14 @@ const Analytics = () => {
         <Sidebar className="border-r">
           <SidebarContent>
             <SidebarGroup>
+              <div className="px-4 py-3">
+                <img 
+                  src={kokoKingLogo} 
+                  alt="Koko King" 
+                  className="h-12 w-auto cursor-pointer"
+                  onClick={() => window.location.reload()}
+                />
+              </div>
               <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>

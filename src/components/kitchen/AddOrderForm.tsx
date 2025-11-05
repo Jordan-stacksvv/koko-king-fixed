@@ -64,6 +64,7 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
       items: selectedItems,
       total: selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
       status: "pending",
+      orderType: "walk-in",
       timestamp: new Date().toISOString(),
       deliveryMethod: "pickup",
     };

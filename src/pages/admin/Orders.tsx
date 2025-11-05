@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { TrendingUp, Store, ShoppingCart, Package, BarChart, Eye } from "lucide-react";
+import { TrendingUp, Store, ShoppingCart, Package, BarChart, Eye, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import kokoKingLogo from "@/assets/koko-king-logo.png";
 
 const AdminOrders = () => {
   const navigate = useNavigate();
@@ -66,6 +67,14 @@ const AdminOrders = () => {
         <Sidebar className="border-r">
           <SidebarContent>
             <SidebarGroup>
+              <div className="px-4 py-3">
+                <img 
+                  src={kokoKingLogo} 
+                  alt="Koko King" 
+                  className="h-12 w-auto cursor-pointer"
+                  onClick={() => window.location.reload()}
+                />
+              </div>
               <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>

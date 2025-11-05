@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { TrendingUp, Store, ShoppingCart, Package, BarChart, Plus, Edit, Trash2 } from "lucide-react";
+import { TrendingUp, Store, ShoppingCart, Package, BarChart, Plus, Edit, Trash2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { menuItems } from "@/data/menuItems";
+import kokoKingLogo from "@/assets/koko-king-logo.png";
 
 const AdminMenu = () => {
   const navigate = useNavigate();
@@ -83,6 +84,14 @@ const AdminMenu = () => {
         <Sidebar className="border-r">
           <SidebarContent>
             <SidebarGroup>
+              <div className="px-4 py-3">
+                <img 
+                  src={kokoKingLogo} 
+                  alt="Koko King" 
+                  className="h-12 w-auto cursor-pointer"
+                  onClick={() => window.location.reload()}
+                />
+              </div>
               <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>

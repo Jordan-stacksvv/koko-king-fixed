@@ -40,6 +40,7 @@ const Checkout = () => {
       paymentMethod,
       total,
       status: "pending",
+      orderType: "online",
       timestamp: new Date().toISOString(),
     };
 
