@@ -15,6 +15,7 @@ const AdminOrders = () => {
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState<string>("all");
 
   useEffect(() => {
     // Check admin auth
@@ -25,15 +26,19 @@ const AdminOrders = () => {
 
     const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
     const allBranches = JSON.parse(localStorage.getItem("branches") || "[]");
+    setBranches(allBranches);
     
-    // Sort orders by date (newest first)
-    const sortedOrders = allOrders.sort((a: any, b: any) => 
+    // Sort and filter orders
+    const filteredOrders = selectedBranch === "all" 
+      ? allOrders 
+      : allOrders.filter((order: any) => order.branchId === selectedBranch);
+    
+    const sortedOrders = filteredOrders.sort((a: any, b: any) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     
     setOrders(sortedOrders);
-    setBranches(allBranches);
-  }, [navigate]);
+  }, [navigate, selectedBranch]);
 
   const getBranchName = (branchId: string) => {
     const branch = branches.find(b => b.id === branchId);
@@ -109,6 +114,12 @@ const AdminOrders = () => {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => navigate("/admin/settings")}>
+                      <Settings className="h-4 w-4" />
+                      <span>Settings</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
                     <SidebarMenuButton onClick={handleLogout} className="text-destructive">
                       <span>Logout</span>
                     </SidebarMenuButton>
@@ -126,6 +137,19 @@ const AdminOrders = () => {
           </header>
 
           <div className="p-6">
+            <div className="mb-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Order Management</h2>
+              <select 
+                className="px-4 py-2 border rounded-lg"
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+              >
+                <option value="all">All Branches</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>{branch.name}</option>
+                ))}
+              </select>
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle>Order History ({orders.length})</CardTitle>

@@ -11,6 +11,7 @@ const Analytics = () => {
   const navigate = useNavigate();
   const [salesData, setSalesData] = useState<any[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<string>("all");
 
   useEffect(() => {
     // Check admin auth
@@ -22,10 +23,19 @@ const Analytics = () => {
     const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
     const allBranches = JSON.parse(localStorage.getItem("branches") || "[]");
     setBranches(allBranches);
+  }, [navigate]);
+
+  useEffect(() => {
+    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    
+    // Filter orders by branch
+    const filteredOrders = selectedBranch === "all" 
+      ? allOrders 
+      : allOrders.filter((order: any) => order.branchId === selectedBranch);
 
     // Process daily sales data
     const dailySales: any = {};
-    allOrders.forEach((order: any) => {
+    filteredOrders.forEach((order: any) => {
       const date = new Date(order.createdAt).toLocaleDateString();
       if (!dailySales[date]) {
         dailySales[date] = { date, revenue: 0, orders: 0 };
@@ -36,7 +46,7 @@ const Analytics = () => {
 
     const salesArray = Object.values(dailySales).slice(-7); // Last 7 days
     setSalesData(salesArray);
-  }, [navigate]);
+  }, [selectedBranch]);
 
   const handleLogout = () => {
     localStorage.removeItem("adminAuth");
@@ -91,6 +101,12 @@ const Analytics = () => {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => navigate("/admin/settings")}>
+                      <Settings className="h-4 w-4" />
+                      <span>Settings</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
                     <SidebarMenuButton onClick={handleLogout} className="text-destructive">
                       <span>Logout</span>
                     </SidebarMenuButton>
@@ -108,6 +124,19 @@ const Analytics = () => {
           </header>
 
           <div className="p-6 space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
+              <select 
+                className="px-4 py-2 border rounded-lg"
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+              >
+                <option value="all">All Branches</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>{branch.name}</option>
+                ))}
+              </select>
+            </div>
             <Tabs defaultValue="daily" className="w-full">
               <TabsList>
                 <TabsTrigger value="daily">Daily</TabsTrigger>

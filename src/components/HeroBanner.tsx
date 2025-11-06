@@ -5,8 +5,9 @@ import banner1 from "@/assets/banner-1.jpg";
 import banner2 from "@/assets/banner-2.jpg";
 import banner3 from "@/assets/banner-3.jpg";
 import banner4 from "@/assets/banner-4.jpg";
+import banner5 from "@/assets/banner-5.jpg";
 
-const banners = [banner1, banner2, banner3, banner4];
+const banners = [banner1, banner2, banner3, banner4, banner5];
 
 export const HeroBanner = () => {
   const [currentSlide, setCurrentSlide] = useState(0);

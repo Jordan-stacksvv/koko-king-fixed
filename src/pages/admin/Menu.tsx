@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { menuItems } from "@/data/menuItems";
 import kokoKingLogo from "@/assets/koko-king-logo.png";
@@ -17,16 +18,18 @@ const AdminMenu = () => {
   const [branches, setBranches] = useState<any[]>([]);
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
   const [newItem, setNewItem] = useState({
     name: "",
     price: "",
     category: "",
+    description: "",
     image: "",
     branchId: "all"
   });
 
   useEffect(() => {
-    // Check admin auth
     if (localStorage.getItem("adminAuth") !== "true") {
       navigate("/admin/login");
       return;
@@ -47,6 +50,7 @@ const AdminMenu = () => {
     const item = {
       id: `custom-${Date.now()}`,
       name: newItem.name,
+      description: newItem.description || "",
       price: parseFloat(newItem.price),
       category: newItem.category,
       image: newItem.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
@@ -58,8 +62,43 @@ const AdminMenu = () => {
     localStorage.setItem("customMenuItems", JSON.stringify(updated));
     setCustomItems(updated);
     toast.success("Menu item added successfully!");
-    setNewItem({ name: "", price: "", category: "", image: "", branchId: "all" });
+    setNewItem({ name: "", price: "", category: "", description: "", image: "", branchId: "all" });
     setIsAddOpen(false);
+  };
+
+  const handleEditItem = (item: any) => {
+    setEditingItem({ ...item });
+    setIsEditOpen(true);
+  };
+
+  const handleUpdateItem = () => {
+    if (!editingItem) return;
+
+    const updated = customItems.map(item => 
+      item.id === editingItem.id ? editingItem : item
+    );
+    localStorage.setItem("customMenuItems", JSON.stringify(updated));
+    setCustomItems(updated);
+    toast.success("Menu item updated!");
+    setIsEditOpen(false);
+    setEditingItem(null);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        if (isEdit && editingItem) {
+          setEditingItem({ ...editingItem, image: base64 });
+        } else {
+          setNewItem({ ...newItem, image: base64 });
+        }
+        toast.success("Image uploaded!");
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleRemoveItem = (id: string, name: string) => {
@@ -126,6 +165,12 @@ const AdminMenu = () => {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => navigate("/admin/settings")}>
+                      <Settings className="h-4 w-4" />
+                      <span>Settings</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
                     <SidebarMenuButton onClick={handleLogout} className="text-destructive">
                       <span>Logout</span>
                     </SidebarMenuButton>
@@ -155,7 +200,11 @@ const AdminMenu = () => {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {allMenuItems.map((item) => (
-                <Card key={item.id}>
+                <Card 
+                  key={item.id}
+                  className={item.id.startsWith("custom-") ? "cursor-pointer hover:shadow-lg transition-shadow" : ""}
+                  onClick={() => item.id.startsWith("custom-") && handleEditItem(item)}
+                >
                   <CardHeader>
                     <img src={item.image} alt={item.name} className="w-full h-32 object-cover rounded-md mb-2" />
                     <CardTitle className="text-lg">{item.name}</CardTitle>
@@ -165,8 +214,8 @@ const AdminMenu = () => {
                       <p className="text-sm text-muted-foreground">Category: {item.category}</p>
                       <p className="text-lg font-bold">₵{item.price.toFixed(2)}</p>
                       {item.id.startsWith("custom-") && (
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" className="flex-1">
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Button size="sm" variant="outline" className="flex-1" onClick={() => handleEditItem(item)}>
                             <Edit className="h-4 w-4 mr-1" />
                             Edit
                           </Button>
@@ -191,7 +240,7 @@ const AdminMenu = () => {
 
       {/* Add Item Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Menu Item</DialogTitle>
           </DialogHeader>
@@ -221,24 +270,44 @@ const AdminMenu = () => {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Pizza">Pizza</SelectItem>
-                  <SelectItem value="Wraps">Wraps</SelectItem>
-                  <SelectItem value="Sandwiches">Sandwiches</SelectItem>
-                  <SelectItem value="Sides">Sides</SelectItem>
-                  <SelectItem value="Drinks">Drinks</SelectItem>
-                  <SelectItem value="Salads">Salads</SelectItem>
-                  <SelectItem value="Combo">Combo</SelectItem>
-                  <SelectItem value="Specials">Specials</SelectItem>
+                  <SelectItem value="specials">Specials</SelectItem>
+                  <SelectItem value="wraps">Wraps</SelectItem>
+                  <SelectItem value="sandwiches">Sandwiches</SelectItem>
+                  <SelectItem value="sides">Sides</SelectItem>
+                  <SelectItem value="drinks">Drinks</SelectItem>
+                  <SelectItem value="salads">Salads</SelectItem>
+                  <SelectItem value="bakery">Bakery</SelectItem>
+                  <SelectItem value="porridge">Porridge</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Image URL</Label>
-              <Input
-                value={newItem.image}
-                onChange={(e) => setNewItem({...newItem, image: e.target.value})}
-                placeholder="https://..."
+              <Label>Description</Label>
+              <Textarea
+                value={newItem.description}
+                onChange={(e) => setNewItem({...newItem, description: e.target.value})}
+                placeholder="Item description"
+                rows={3}
               />
+            </div>
+            <div>
+              <Label>Image</Label>
+              <div className="space-y-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e)}
+                  className="cursor-pointer"
+                />
+                <Input
+                  value={newItem.image}
+                  onChange={(e) => setNewItem({...newItem, image: e.target.value})}
+                  placeholder="Or paste image URL"
+                />
+                {newItem.image && (
+                  <img src={newItem.image} alt="Preview" className="w-full h-32 object-cover rounded-md" />
+                )}
+              </div>
             </div>
             <div>
               <Label>Branch</Label>
@@ -259,6 +328,98 @@ const AdminMenu = () => {
               <Button onClick={handleAddItem}>Add Item</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Item Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Menu Item</DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <div className="space-y-4">
+              <div>
+                <Label>Item Name *</Label>
+                <Input
+                  value={editingItem.name}
+                  onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Price (₵) *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editingItem.price}
+                  onChange={(e) => setEditingItem({...editingItem, price: parseFloat(e.target.value)})}
+                />
+              </div>
+              <div>
+                <Label>Category *</Label>
+                <Select value={editingItem.category} onValueChange={(v) => setEditingItem({...editingItem, category: v})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="specials">Specials</SelectItem>
+                    <SelectItem value="wraps">Wraps</SelectItem>
+                    <SelectItem value="sandwiches">Sandwiches</SelectItem>
+                    <SelectItem value="sides">Sides</SelectItem>
+                    <SelectItem value="drinks">Drinks</SelectItem>
+                    <SelectItem value="salads">Salads</SelectItem>
+                    <SelectItem value="bakery">Bakery</SelectItem>
+                    <SelectItem value="porridge">Porridge</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={editingItem.description || ""}
+                  onChange={(e) => setEditingItem({...editingItem, description: e.target.value})}
+                  rows={3}
+                />
+              </div>
+              <div>
+                <Label>Image</Label>
+                <div className="space-y-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, true)}
+                    className="cursor-pointer"
+                  />
+                  <Input
+                    value={editingItem.image}
+                    onChange={(e) => setEditingItem({...editingItem, image: e.target.value})}
+                    placeholder="Or paste image URL"
+                  />
+                  {editingItem.image && (
+                    <img src={editingItem.image} alt="Preview" className="w-full h-32 object-cover rounded-md" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label>Branch</Label>
+                <Select value={editingItem.branchId} onValueChange={(v) => setEditingItem({...editingItem, branchId: v})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Branches</SelectItem>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                <Button onClick={handleUpdateItem}>Save Changes</Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </SidebarProvider>
