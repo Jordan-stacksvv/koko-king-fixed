@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
+import { LocationSelector } from "@/components/LocationSelector";
 import { Button } from "@/components/ui/button";
+import { restaurants } from "@/data/menuItems";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +13,7 @@ import { toast } from "sonner";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const [selectedRestaurant, setSelectedRestaurant] = useState(restaurants[0]);
   const [deliveryMethod, setDeliveryMethod] = useState<"delivery" | "pickup">("delivery");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [formData, setFormData] = useState({
@@ -41,6 +44,7 @@ const Checkout = () => {
       total,
       status: "pending",
       orderType: "online",
+      branch: selectedRestaurant.name,
       timestamp: new Date().toISOString(),
     };
 
@@ -65,6 +69,12 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+
+      <LocationSelector
+        selectedRestaurant={selectedRestaurant}
+        restaurants={restaurants}
+        onRestaurantChange={setSelectedRestaurant}
+      />
 
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-8">Checkout</h1>

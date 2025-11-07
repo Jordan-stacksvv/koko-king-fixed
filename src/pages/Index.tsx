@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { categories, menuItems, restaurants } from "@/data/menuItems";
 import { useState, useEffect } from "react";
-import { requestUserLocation } from "@/lib/geolocation";
+import { requestUserLocation, findNearestRestaurant } from "@/lib/geolocation";
+import { toast } from "sonner";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -17,20 +18,33 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    // Auto-detect user location on first visit
-    const hasDetectedLocation = localStorage.getItem("locationDetected");
-    
-    if (!hasDetectedLocation) {
-      requestUserLocation().then((coords) => {
-        if (coords) {
-          // Find closest restaurant based on coordinates
-          // For demo purposes, we'll just set to first restaurant
-          // In production, calculate distance to each restaurant
-          localStorage.setItem("locationDetected", "true");
-          setSelectedRestaurant(restaurants[0]);
+    const detectLocation = async () => {
+      try {
+        // Check if we already have a saved location
+        const savedRestaurant = localStorage.getItem("selectedRestaurant");
+        if (savedRestaurant) {
+          const restaurant = JSON.parse(savedRestaurant);
+          setSelectedRestaurant(restaurant);
+          return;
         }
-      });
-    }
+
+        // Auto-detect location on first visit
+        const position = await requestUserLocation();
+        const nearest = findNearestRestaurant(
+          position.coords.latitude,
+          position.coords.longitude,
+          restaurants
+        );
+        setSelectedRestaurant(nearest);
+        localStorage.setItem("selectedRestaurant", JSON.stringify(nearest));
+        toast.success(`Nearest location: ${nearest.name}`);
+      } catch (error) {
+        // Silently fail - user can manually select location
+        console.log("Location detection skipped");
+      }
+    };
+
+    detectLocation();
   }, []);
 
   const filteredItems = menuItems.filter((item) => {

@@ -1,10 +1,12 @@
 import { Navbar } from "@/components/Navbar";
 import { FloatingCart } from "@/components/FloatingCart";
+import { LocationSelector } from "@/components/LocationSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { restaurants } from "@/data/menuItems";
 
 interface CartItem {
   id: string;
@@ -17,6 +19,7 @@ interface CartItem {
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(restaurants[0]);
 
   useEffect(() => {
     loadCart();
@@ -57,6 +60,12 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+
+      <LocationSelector
+        selectedRestaurant={selectedRestaurant}
+        restaurants={restaurants}
+        onRestaurantChange={setSelectedRestaurant}
+      />
 
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <h1 className="text-2xl sm:text-4xl font-bold mb-4 sm:mb-8">Shopping Cart</h1>

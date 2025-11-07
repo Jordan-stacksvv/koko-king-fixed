@@ -75,6 +75,7 @@ export const LocationSelector = ({
                     key={restaurant.id}
                     onClick={() => {
                       onRestaurantChange(restaurant);
+                      localStorage.setItem("selectedRestaurant", JSON.stringify(restaurant));
                       setIsDialogOpen(false);
                     }}
                     className={`w-full text-left p-3 rounded-lg border transition-colors ${
