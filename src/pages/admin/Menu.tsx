@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { TrendingUp, Store, ShoppingCart, Package, BarChart, Plus, Edit, Trash2, Settings } from "lucide-react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Plus, Edit, Trash2, Eye } from "lucide-react";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +20,9 @@ const AdminMenu = () => {
   const [customItems, setCustomItems] = useState<any[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [viewingItem, setViewingItem] = useState<any>(null);
   const [newItem, setNewItem] = useState({
     name: "",
     price: "",
@@ -66,6 +69,11 @@ const AdminMenu = () => {
     setIsAddOpen(false);
   };
 
+  const handleViewItem = (item: any) => {
+    setViewingItem({ ...item });
+    setIsViewOpen(true);
+  };
+
   const handleEditItem = (item: any) => {
     setEditingItem({ ...item });
     setIsEditOpen(true);
@@ -110,76 +118,12 @@ const AdminMenu = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
-    navigate("/admin/login");
-  };
-
   const allMenuItems = [...menuItems, ...customItems];
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar className="border-r">
-          <SidebarContent>
-            <SidebarGroup>
-              <div className="px-4 py-3">
-                <img 
-                  src={kokoKingLogo} 
-                  alt="Koko King" 
-                  className="h-12 w-auto cursor-pointer"
-                  onClick={() => window.location.reload()}
-                />
-              </div>
-              <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/dashboard")}>
-                      <TrendingUp className="h-4 w-4" />
-                      <span>Dashboard</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/branches")}>
-                      <Store className="h-4 w-4" />
-                      <span>Branches</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/analytics")}>
-                      <BarChart className="h-4 w-4" />
-                      <span>Sales Analytics</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/orders")}>
-                      <ShoppingCart className="h-4 w-4" />
-                      <span>All Orders</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/menu")} className="bg-primary/10">
-                      <Package className="h-4 w-4" />
-                      <span>Menu Management</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/settings")}>
-                      <Settings className="h-4 w-4" />
-                      <span>Settings</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={handleLogout} className="text-destructive">
-                      <span>Logout</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
+        <AdminSidebar />
 
         <main className="flex-1 overflow-auto">
           <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-6">
@@ -202,33 +146,56 @@ const AdminMenu = () => {
               {allMenuItems.map((item) => (
                 <Card 
                   key={item.id}
-                  className={item.id.startsWith("custom-") ? "cursor-pointer hover:shadow-lg transition-shadow" : ""}
-                  onClick={() => item.id.startsWith("custom-") && handleEditItem(item)}
+                  className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02]"
+                  onClick={() => item.id.startsWith("custom-") ? handleEditItem(item) : handleViewItem(item)}
                 >
-                  <CardHeader>
-                    <img src={item.image} alt={item.name} className="w-full h-32 object-cover rounded-md mb-2" />
-                    <CardTitle className="text-lg">{item.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">Category: {item.category}</p>
-                      <p className="text-lg font-bold">₵{item.price.toFixed(2)}</p>
-                      {item.id.startsWith("custom-") && (
-                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Button size="sm" variant="outline" className="flex-1" onClick={() => handleEditItem(item)}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-destructive"
-                            onClick={() => handleRemoveItem(item.id, item.name)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                  <CardHeader className="p-0">
+                    <div className="relative">
+                      <img src={item.image} alt={item.name} className="w-full h-48 object-cover rounded-t-lg" />
+                      {!item.id.startsWith("custom-") && (
+                        <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs font-medium">
+                          Default Menu
                         </div>
                       )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
+                        {item.description && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                          {item.category}
+                        </span>
+                        <span className="text-lg font-bold text-primary">₵{item.price.toFixed(2)}</span>
+                      </div>
+                      <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                        {item.id.startsWith("custom-") ? (
+                          <>
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => handleEditItem(item)}>
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                              onClick={() => handleRemoveItem(item.id, item.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Button size="sm" variant="outline" className="w-full" onClick={() => handleViewItem(item)}>
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Details
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -328,6 +295,50 @@ const AdminMenu = () => {
               <Button onClick={handleAddItem}>Add Item</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Item Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Menu Item Details</DialogTitle>
+          </DialogHeader>
+          {viewingItem && (
+            <div className="space-y-4">
+              <div className="rounded-lg overflow-hidden">
+                <img src={viewingItem.image} alt={viewingItem.name} className="w-full h-64 object-cover" />
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-muted-foreground">Item Name</Label>
+                  <p className="text-lg font-semibold mt-1">{viewingItem.name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Price</Label>
+                  <p className="text-2xl font-bold text-primary mt-1">₵{viewingItem.price.toFixed(2)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Category</Label>
+                  <p className="text-lg mt-1 capitalize">{viewingItem.category}</p>
+                </div>
+                {viewingItem.description && (
+                  <div>
+                    <Label className="text-muted-foreground">Description</Label>
+                    <p className="text-sm mt-1 text-muted-foreground">{viewingItem.description}</p>
+                  </div>
+                )}
+                <div className="pt-4 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    This is a default menu item and cannot be edited. You can create custom menu items instead.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => setIsViewOpen(false)}>Close</Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

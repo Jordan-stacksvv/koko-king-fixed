@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { TrendingUp, Store, BarChart, ShoppingCart, Package, Settings as SettingsIcon, Send } from "lucide-react";
-import kokoKingLogo from "@/assets/koko-king-logo.png";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { Send } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminSettings = () => {
@@ -61,66 +61,7 @@ const AdminSettings = () => {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar className="border-r">
-          <SidebarContent>
-            <SidebarGroup>
-              <div className="px-4 py-3">
-                <img 
-                  src={kokoKingLogo} 
-                  alt="Koko King" 
-                  className="h-12 w-auto cursor-pointer"
-                  onClick={() => window.location.reload()}
-                />
-              </div>
-              <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/dashboard")}>
-                      <TrendingUp className="h-4 w-4" />
-                      <span>Dashboard</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/branches")}>
-                      <Store className="h-4 w-4" />
-                      <span>Branches</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/analytics")}>
-                      <BarChart className="h-4 w-4" />
-                      <span>Sales Analytics</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/orders")}>
-                      <ShoppingCart className="h-4 w-4" />
-                      <span>All Orders</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/menu")}>
-                      <Package className="h-4 w-4" />
-                      <span>Menu Management</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton className="bg-primary/10">
-                      <SettingsIcon className="h-4 w-4" />
-                      <span>Settings</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={handleLogout} className="text-destructive">
-                      <span>Logout</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
+        <AdminSidebar />
 
         <main className="flex-1 overflow-auto">
           <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-6">

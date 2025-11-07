@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, TrendingUp, ShoppingCart, Award, Store, Package } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { DollarSign, TrendingUp, ShoppingCart, Award, Store } from "lucide-react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import kokoKingLogo from "@/assets/koko-king-logo.png";
 import { initializeBranches } from "@/data/defaultBranches";
 
 const COLORS = ['#E94E1B', '#FFA500', '#FFD700', '#32CD32', '#4169E1'];
@@ -72,68 +72,10 @@ const AdminDashboard = () => {
     navigate(`/admin/branches?selected=${branchId}`);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
-    navigate("/admin/login");
-  };
-
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
-        <Sidebar className="border-r">
-          <SidebarContent>
-            <SidebarGroup>
-              <div className="px-4 py-3">
-                <img 
-                  src={kokoKingLogo} 
-                  alt="Koko King" 
-                  className="h-12 w-auto cursor-pointer"
-                  onClick={() => window.location.reload()}
-                />
-              </div>
-              <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/dashboard")} className="bg-primary/10">
-                      <TrendingUp className="h-4 w-4" />
-                      <span>Dashboard</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/branches")}>
-                      <Store className="h-4 w-4" />
-                      <span>Branches</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/analytics")}>
-                      <BarChart className="h-4 w-4" />
-                      <span>Sales Analytics</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/orders")}>
-                      <ShoppingCart className="h-4 w-4" />
-                      <span>All Orders</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate("/admin/menu")}>
-                      <Package className="h-4 w-4" />
-                      <span>Menu Management</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={handleLogout} className="text-destructive">
-                      <span>Logout</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
+        <AdminSidebar />
 
         <main className="flex-1 overflow-auto">
           <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-6">
