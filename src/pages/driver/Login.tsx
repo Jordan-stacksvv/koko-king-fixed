@@ -69,7 +69,12 @@ const DriverLogin = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img src={kokoKingLogo} alt="Koko King" className="h-16 mx-auto mb-4" />
+          <img 
+            src={kokoKingLogo} 
+            alt="Koko King" 
+            className="h-16 mx-auto mb-4 cursor-pointer hover:opacity-80 transition-opacity" 
+            onClick={() => navigate("/")}
+          />
           <CardTitle className="text-2xl">Driver Portal</CardTitle>
           <CardDescription>Login or signup to manage deliveries</CardDescription>
         </CardHeader>

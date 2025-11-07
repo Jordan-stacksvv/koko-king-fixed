@@ -28,7 +28,12 @@ const AdminLogin = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-3 text-center">
-          <img src={kokoKingLogo} alt="Koko King" className="h-16 mx-auto" />
+          <img 
+            src={kokoKingLogo} 
+            alt="Koko King" 
+            className="h-16 mx-auto cursor-pointer hover:opacity-80 transition-opacity" 
+            onClick={() => navigate("/")}
+          />
           <CardTitle className="text-2xl">Admin Access</CardTitle>
           <CardDescription>Sign in to access admin dashboard</CardDescription>
         </CardHeader>

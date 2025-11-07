@@ -31,7 +31,12 @@ const KitchenLogin = () => {
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <img src={kokoKingLogo} alt="Koko King" className="h-16 w-auto" />
+            <img 
+              src={kokoKingLogo} 
+              alt="Koko King" 
+              className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity" 
+              onClick={() => navigate("/")}
+            />
           </div>
           <div>
             <CardTitle className="text-2xl flex items-center justify-center gap-2">
