@@ -19,6 +19,8 @@ const Orders = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   useEffect(() => {
     loadOrders();
@@ -35,7 +37,9 @@ const Orders = () => {
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesSearch;
+    const matchesDate = !selectedDate || new Date(order.timestamp).toISOString().split('T')[0] === selectedDate;
+    const matchesCategory = selectedCategory === "all" || order.items?.some((item: any) => item.category === selectedCategory);
+    return matchesStatus && matchesSearch && matchesDate && matchesCategory;
   });
 
   const getStatusColor = (status: string) => {
@@ -76,6 +80,28 @@ const Orders = () => {
               <SelectItem value="confirmed">Confirmed</SelectItem>
               <SelectItem value="preparing">Preparing</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="px-4 py-2 border rounded-lg w-full md:w-48"
+          />
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full md:w-48">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="specials">King Specials</SelectItem>
+              <SelectItem value="wraps">Wraps & Quesadillas</SelectItem>
+              <SelectItem value="sandwiches">Sandwiches</SelectItem>
+              <SelectItem value="salads">Salads</SelectItem>
+              <SelectItem value="sides">Sides</SelectItem>
+              <SelectItem value="bakery">Bakery</SelectItem>
+              <SelectItem value="porridge">Porridge & Hot Beverages</SelectItem>
+              <SelectItem value="drinks">Drinks</SelectItem>
             </SelectContent>
           </Select>
         </div>

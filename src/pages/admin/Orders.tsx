@@ -16,6 +16,8 @@ const AdminOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<string>("all");
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   useEffect(() => {
     // Check admin auth
@@ -29,16 +31,31 @@ const AdminOrders = () => {
     setBranches(allBranches);
     
     // Sort and filter orders
-    const filteredOrders = selectedBranch === "all" 
+    let filteredOrders = selectedBranch === "all" 
       ? allOrders 
       : allOrders.filter((order: any) => order.branchId === selectedBranch);
+    
+    // Apply date filter
+    if (selectedDate) {
+      filteredOrders = filteredOrders.filter((order: any) => {
+        const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
+        return orderDate === selectedDate;
+      });
+    }
+
+    // Apply category filter
+    if (selectedCategory !== "all") {
+      filteredOrders = filteredOrders.filter((order: any) =>
+        order.items?.some((item: any) => item.category === selectedCategory)
+      );
+    }
     
     const sortedOrders = filteredOrders.sort((a: any, b: any) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     
     setOrders(sortedOrders);
-  }, [navigate, selectedBranch]);
+  }, [navigate, selectedBranch, selectedDate, selectedCategory]);
 
   const getBranchName = (branchId: string) => {
     const branch = branches.find(b => b.id === branchId);
@@ -137,8 +154,7 @@ const AdminOrders = () => {
           </header>
 
           <div className="p-6">
-            <div className="mb-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Order Management</h2>
+            <div className="mb-4 flex flex-col sm:flex-row gap-4">
               <select 
                 className="px-4 py-2 border rounded-lg"
                 value={selectedBranch}
@@ -148,6 +164,30 @@ const AdminOrders = () => {
                 {branches.map((branch) => (
                   <option key={branch.id} value={branch.id}>{branch.name}</option>
                 ))}
+              </select>
+
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-4 py-2 border rounded-lg"
+                placeholder="Filter by date"
+              />
+
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-4 py-2 border rounded-lg"
+              >
+                <option value="all">All Categories</option>
+                <option value="specials">King Specials</option>
+                <option value="wraps">Wraps & Quesadillas</option>
+                <option value="sandwiches">Sandwiches</option>
+                <option value="salads">Salads</option>
+                <option value="sides">Sides</option>
+                <option value="bakery">Bakery</option>
+                <option value="porridge">Porridge & Hot Beverages</option>
+                <option value="drinks">Drinks</option>
               </select>
             </div>
             <Card>

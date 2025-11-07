@@ -17,6 +17,8 @@ const AdminSettings = () => {
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
   const [message, setMessage] = useState({ to: "", subject: "", content: "" });
   const [branchAccessEnabled, setBranchAccessEnabled] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState({ id: "", name: "" });
 
   useEffect(() => {
     if (localStorage.getItem("adminAuth") !== "true") {
@@ -41,6 +43,19 @@ const AdminSettings = () => {
 
   const handleSaveSettings = () => {
     toast.success("Settings saved successfully!");
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategory.id || !newCategory.name) {
+      toast.error("Please fill in all category fields");
+      return;
+    }
+    const categories = JSON.parse(localStorage.getItem("categories") || "[]");
+    categories.push({ id: newCategory.id, name: newCategory.name, image: "" });
+    localStorage.setItem("categories", JSON.stringify(categories));
+    toast.success(`Category "${newCategory.name}" added successfully!`);
+    setNewCategory({ id: "", name: "" });
+    setIsCategoryDialogOpen(false);
   };
 
   return (
@@ -193,6 +208,17 @@ const AdminSettings = () => {
             {/* Feature Toggles */}
             <Card>
               <CardHeader>
+                <CardTitle>Category Management</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button onClick={() => setIsCategoryDialogOpen(true)}>
+                  Add New Category
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>System Features</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -264,6 +290,41 @@ const AdminSettings = () => {
             </div>
           </div>
         </main>
+
+        {/* Category Dialog */}
+        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Category</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Category ID</Label>
+                <Input
+                  value={newCategory.id}
+                  onChange={(e) => setNewCategory({ ...newCategory, id: e.target.value })}
+                  placeholder="e.g., pizza"
+                />
+              </div>
+              <div>
+                <Label>Category Name</Label>
+                <Input
+                  value={newCategory.name}
+                  onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                  placeholder="e.g., Pizza"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddCategory}>
+                  Add Category
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </SidebarProvider>
   );

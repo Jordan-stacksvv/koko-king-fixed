@@ -34,14 +34,20 @@ export const LocationSelector = ({
               <span>DELIVERY</span>
             </div>
             <div className="flex-1 w-full flex items-center gap-2 sm:gap-4">
-              <div className="flex-1 min-w-0">
+              <button 
+                onClick={() => setIsDialogOpen(true)}
+                className="flex-1 min-w-0 text-left hover:bg-muted/50 rounded-lg p-2 transition-colors"
+              >
                 <div className="text-xs sm:text-sm text-muted-foreground">From:</div>
                 <div className="font-semibold text-foreground text-xs sm:text-base truncate">{selectedRestaurant.name.toUpperCase()}</div>
-              </div>
-              <div className="flex-1 min-w-0">
+              </button>
+              <button 
+                onClick={() => setIsDialogOpen(true)}
+                className="flex-1 min-w-0 text-left hover:bg-muted/50 rounded-lg p-2 transition-colors"
+              >
                 <div className="text-xs sm:text-sm text-muted-foreground">To:</div>
                 <div className="font-semibold text-foreground text-xs sm:text-base truncate">{deliveryAddress}</div>
-              </div>
+              </button>
               <Button
                 variant="ghost"
                 size="icon"
