@@ -18,6 +18,7 @@ const AdminMenu = () => {
   const navigate = useNavigate();
   const [branches, setBranches] = useState<any[]>([]);
   const [customItems, setCustomItems] = useState<any[]>([]);
+  const [deletedDefaultItems, setDeletedDefaultItems] = useState<string[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -40,8 +41,10 @@ const AdminMenu = () => {
 
     const allBranches = JSON.parse(localStorage.getItem("branches") || "[]");
     const savedItems = JSON.parse(localStorage.getItem("customMenuItems") || "[]");
+    const deleted = JSON.parse(localStorage.getItem("deletedDefaultItems") || "[]");
     setBranches(allBranches);
     setCustomItems(savedItems);
+    setDeletedDefaultItems(deleted);
   }, [navigate]);
 
   const handleAddItem = () => {
@@ -118,7 +121,18 @@ const AdminMenu = () => {
     }
   };
 
-  const allMenuItems = [...menuItems, ...customItems];
+  const handleRemoveDefaultItem = (id: string, name: string) => {
+    if (confirm(`Remove ${name} from menu?`)) {
+      const updated = [...deletedDefaultItems, id];
+      localStorage.setItem("deletedDefaultItems", JSON.stringify(updated));
+      setDeletedDefaultItems(updated);
+      toast.success("Item removed");
+      setIsViewOpen(false);
+    }
+  };
+
+  const activeDefaultItems = menuItems.filter(item => !deletedDefaultItems.includes(item.id));
+  const allMenuItems = [...activeDefaultItems, ...customItems];
 
   return (
     <SidebarProvider>
@@ -189,11 +203,21 @@ const AdminMenu = () => {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
-                        ) : (
-                          <Button size="sm" variant="outline" className="w-full" onClick={() => handleViewItem(item)}>
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Details
-                          </Button>
+                         ) : (
+                          <>
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => handleViewItem(item)}>
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                              onClick={() => handleRemoveDefaultItem(item.id, item.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -330,12 +354,19 @@ const AdminMenu = () => {
                 )}
                 <div className="pt-4 border-t">
                   <p className="text-xs text-muted-foreground">
-                    This is a default menu item and cannot be edited. You can create custom menu items instead.
+                    This is a default menu item. You can remove it or create custom menu items instead.
                   </p>
                 </div>
               </div>
-              <div className="flex justify-end">
-                <Button onClick={() => setIsViewOpen(false)}>Close</Button>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsViewOpen(false)}>Close</Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => viewingItem && handleRemoveDefaultItem(viewingItem.id, viewingItem.name)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remove Item
+                </Button>
               </div>
             </div>
           )}
