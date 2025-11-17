@@ -33,6 +33,8 @@ import AdminOrders from "./pages/admin/Orders";
 import AdminMenu from "./pages/admin/Menu";
 import AdminExtras from "./pages/admin/Extras";
 import AdminSettings from "./pages/admin/Settings";
+import AdminDeliveries from "./pages/admin/Deliveries";
+import AdminPayments from "./pages/admin/Payments";
 
 // Kitchen Display
 import KitchenDisplay from "./pages/kitchen/Display";
@@ -83,6 +85,8 @@ const App = () => (
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/menu" element={<AdminMenu />} />
           <Route path="/admin/extras" element={<AdminExtras />} />
+          <Route path="/admin/deliveries" element={<AdminDeliveries />} />
+          <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
 
           {/* Driver Routes */}
