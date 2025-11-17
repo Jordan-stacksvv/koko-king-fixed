@@ -31,6 +31,7 @@ import Branches from "./pages/admin/Branches";
 import Analytics from "./pages/admin/Analytics";
 import AdminOrders from "./pages/admin/Orders";
 import AdminMenu from "./pages/admin/Menu";
+import AdminExtras from "./pages/admin/Extras";
 import AdminSettings from "./pages/admin/Settings";
 
 // Kitchen Display
@@ -81,6 +82,7 @@ const App = () => (
           <Route path="/admin/analytics" element={<Analytics />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/menu" element={<AdminMenu />} />
+          <Route path="/admin/extras" element={<AdminExtras />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
 
           {/* Driver Routes */}

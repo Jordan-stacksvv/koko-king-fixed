@@ -6,6 +6,7 @@ import { Search, Plus, Minus, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { menuItems } from "@/data/menuItems";
+import { MenuItemDialog } from "./MenuItemDialog";
 
 export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
   const [customer, setCustomer] = useState({
@@ -16,22 +17,33 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFullMenu, setShowFullMenu] = useState(false);
+  const [dialogItem, setDialogItem] = useState<any>(null);
 
   const handleAddItem = (item: any) => {
-    const existing = selectedItems.find(i => i.id === item.id);
-    if (existing) {
-      setSelectedItems(selectedItems.map(i => 
-        i.id === item.id ? {...i, quantity: i.quantity + 1} : i
-      ));
-    } else {
-      setSelectedItems([...selectedItems, { ...item, quantity: 1, extras: [] }]);
-    }
-    toast.success(`${item.name} added`);
+    setDialogItem(item);
   };
 
-  const updateQuantity = (itemId: string, delta: number) => {
+  const handleAddToOrder = (itemWithExtras: any) => {
+    const itemId = `${itemWithExtras.id}-${itemWithExtras.extras?.map((e: any) => e.id).join('-') || 'base'}`;
+    const existing = selectedItems.find(i => i.uniqueId === itemId);
+    
+    if (existing) {
+      setSelectedItems(selectedItems.map(i => 
+        i.uniqueId === itemId ? {...i, quantity: i.quantity + itemWithExtras.quantity} : i
+      ));
+    } else {
+      setSelectedItems([...selectedItems, { 
+        ...itemWithExtras, 
+        uniqueId: itemId,
+        basePrice: itemWithExtras.price,
+      }]);
+    }
+    toast.success(`${itemWithExtras.name} added`);
+  };
+
+  const updateQuantity = (uniqueId: string, delta: number) => {
     setSelectedItems(selectedItems.map(item => {
-      if (item.id === itemId) {
+      if (item.uniqueId === uniqueId) {
         const newQty = Math.max(1, item.quantity + delta);
         return {...item, quantity: newQty};
       }
@@ -39,8 +51,8 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
     }));
   };
 
-  const removeItem = (itemId: string) => {
-    setSelectedItems(selectedItems.filter(i => i.id !== itemId));
+  const removeItem = (uniqueId: string) => {
+    setSelectedItems(selectedItems.filter(i => i.uniqueId !== uniqueId));
   };
 
   const filteredMenu = menuItems.filter(item =>
@@ -58,11 +70,17 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
       return;
     }
 
+    const total = selectedItems.reduce((sum, item) => {
+      const basePrice = item.price;
+      const extrasPrice = item.extras?.reduce((eSum: number, e: any) => eSum + e.price, 0) || 0;
+      return sum + (basePrice + extrasPrice) * item.quantity;
+    }, 0);
+
     const newOrder = {
       id: `KK-${Math.floor(1000 + Math.random() * 9000)}`,
       customer,
       items: selectedItems,
-      total: selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+      total,
       status: "pending",
       orderType: "walk-in",
       timestamp: new Date().toISOString(),
@@ -162,51 +180,49 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
           <Label>Selected Items ({selectedItems.length})</Label>
           <div className="space-y-2 mt-2 p-3 bg-muted/50 rounded-lg max-h-[200px] overflow-y-auto">
             {selectedItems.map((item) => (
-              <div key={item.id} className="flex justify-between items-center text-sm gap-2">
-                <span className="flex-1 truncate">{item.name}</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateQuantity(item.id, -1)}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <span className="w-6 text-center">{item.quantity}</span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateQuantity(item.id, 1)}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                  <span className="font-semibold w-16 text-right">₵{(item.price * item.quantity).toFixed(2)}</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => removeItem(item.id)}
-                    className="h-6 w-6 p-0 text-destructive"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+              <div key={item.uniqueId} className="space-y-1">
+                <div className="flex justify-between items-center text-sm gap-2">
+                  <span className="flex-1 truncate">{item.name}</span>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => updateQuantity(item.uniqueId, -1)} className="h-6 w-6 p-0">
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="w-6 text-center">{item.quantity}</span>
+                    <Button size="sm" variant="outline" onClick={() => updateQuantity(item.uniqueId, 1)} className="h-6 w-6 p-0">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <span className="font-semibold w-16 text-right">
+                      ₵{((item.price + (item.extras?.reduce((s: number, e: any) => s + e.price, 0) || 0)) * item.quantity).toFixed(2)}
+                    </span>
+                    <Button size="sm" variant="ghost" onClick={() => removeItem(item.uniqueId)} className="h-6 w-6 p-0 text-destructive">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
+                {item.extras && item.extras.length > 0 && (
+                  <div className="pl-4 text-xs text-muted-foreground">+ {item.extras.map((e: any) => e.name).join(", ")}</div>
+                )}
               </div>
             ))}
             <div className="pt-2 border-t mt-2">
               <div className="flex justify-between font-bold">
                 <span>Total</span>
-                <span>₵{selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</span>
+                <span>₵{selectedItems.reduce((sum, item) => {
+                  const basePrice = item.price;
+                  const extrasPrice = item.extras?.reduce((eSum: number, e: any) => eSum + e.price, 0) || 0;
+                  return sum + (basePrice + extrasPrice) * item.quantity;
+                }, 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      <Button onClick={handleSubmit} className="w-full" size="lg">
-        Add Walk-in Order
-      </Button>
+      <Button onClick={handleSubmit} className="w-full" size="lg">Add Walk-in Order</Button>
+
+      {dialogItem && (
+        <MenuItemDialog isOpen={!!dialogItem} onClose={() => setDialogItem(null)} item={dialogItem} onAddToOrder={handleAddToOrder} />
+      )}
     </div>
   );
 };

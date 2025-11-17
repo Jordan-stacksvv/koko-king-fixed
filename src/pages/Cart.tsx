@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/Navbar";
 import { FloatingCart } from "@/components/FloatingCart";
-import { LocationSelector } from "@/components/LocationSelector";
+import { LocationSelectorWithMap } from "@/components/LocationSelectorWithMap";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
@@ -61,7 +61,7 @@ const Cart = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <LocationSelector
+      <LocationSelectorWithMap
         selectedRestaurant={selectedRestaurant}
         restaurants={restaurants}
         onRestaurantChange={setSelectedRestaurant}
