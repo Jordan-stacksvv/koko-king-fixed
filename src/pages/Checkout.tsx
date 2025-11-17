@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
-import { LocationSelector } from "@/components/LocationSelector";
+import { LocationSelectorWithMap } from "@/components/LocationSelectorWithMap";
 import { Button } from "@/components/ui/button";
 import { restaurants } from "@/data/menuItems";
 import { Input } from "@/components/ui/input";
@@ -70,7 +70,7 @@ const Checkout = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <LocationSelector
+      <LocationSelectorWithMap
         selectedRestaurant={selectedRestaurant}
         restaurants={restaurants}
         onRestaurantChange={setSelectedRestaurant}

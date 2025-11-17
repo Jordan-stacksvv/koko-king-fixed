@@ -18,6 +18,9 @@ export function AdminSidebar() {
     { path: "/admin/analytics", label: "Sales Analytics", icon: BarChart },
     { path: "/admin/orders", label: "All Orders", icon: ShoppingCart },
     { path: "/admin/menu", label: "Menu Management", icon: Package },
+    { path: "/admin/extras", label: "Menu Extras", icon: Settings },
+    { path: "/manager/deliveries", label: "Deliveries", icon: TrendingUp },
+    { path: "/manager/payments", label: "Payments", icon: ShoppingCart },
     { path: "/admin/settings", label: "Settings", icon: Settings },
   ];
 

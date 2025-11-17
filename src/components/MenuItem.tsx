@@ -12,13 +12,19 @@ interface ExtraOption {
   price: number;
 }
 
-const extraOptions: ExtraOption[] = [
-  { id: "extra-pepper", name: "Extra Pepper", price: 5 },
-  { id: "extra-tomatoes", name: "Extra Tomatoes", price: 15 },
-  { id: "extra-cheese", name: "Extra Cheese", price: 20 },
-  { id: "extra-sauce", name: "Extra Sauce", price: 10 },
-  { id: "no-onions", name: "No Onions", price: 0 },
-];
+const getExtraOptions = (): ExtraOption[] => {
+  const savedExtras = localStorage.getItem("menuExtras");
+  if (savedExtras) {
+    return JSON.parse(savedExtras);
+  }
+  return [
+    { id: "extra-pepper", name: "Extra Pepper", price: 5 },
+    { id: "extra-tomatoes", name: "Extra Tomatoes", price: 15 },
+    { id: "extra-cheese", name: "Extra Cheese", price: 20 },
+    { id: "extra-sauce", name: "Extra Sauce", price: 10 },
+    { id: "no-onions", name: "No Onions", price: 0 },
+  ];
+};
 
 export interface MenuItemProps {
   id: string;
@@ -33,6 +39,7 @@ export const MenuItem = ({ id, name, description, price, image, category }: Menu
   const [quantity, setQuantity] = useState(1);
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const extraOptions = getExtraOptions();
 
   const toggleExtra = (extraId: string) => {
     setSelectedExtras(prev =>
