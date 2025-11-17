@@ -39,6 +39,7 @@ export const KitchenLayout = ({ children }: KitchenLayoutProps) => {
     { path: "/manager/orders", icon: ShoppingBag, label: "Orders" },
     { path: "/manager/deliveries", icon: Truck, label: "Deliveries" },
     { path: "/manager/menu", icon: ChefHat, label: "Menu" },
+    { path: "/admin/extras", icon: Settings, label: "Menu Extras" },
     { path: "/manager/payments", icon: DollarSign, label: "Payments" },
     { path: "/manager/settings", icon: Settings, label: "Settings" },
   ];
