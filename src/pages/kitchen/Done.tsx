@@ -1,243 +1,321 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Bike, MapPin, Phone, Package } from "lucide-react";
-import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Bike, Clock, CheckCircle2, Radio, User, MapPin, Phone } from "lucide-react";
 import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
+import { toast } from "sonner";
 
-const KitchenDone = () => {
-  const navigate = useNavigate();
-  const [doneOrders, setDoneOrders] = useState<any[]>([]);
+export default function KitchenDone() {
+  const [orders, setOrders] = useState<any[]>([]);
   const [onlineDrivers, setOnlineDrivers] = useState<any[]>([]);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [assignmentInProgress, setAssignmentInProgress] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem("kitchenAuth")) {
-      navigate("/kitchen/login");
-      return;
-    }
     loadData();
-    const interval = setInterval(loadData, 2000);
+    const interval = setInterval(loadData, 3000);
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, []);
 
   const loadData = () => {
-    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const done = orders.filter((o: any) => o.status === "completed");
-    setDoneOrders(done);
+    const storedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const completedOrders = storedOrders.filter((order: any) => order.status === "completed");
+    setOrders(completedOrders);
 
-    const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-    const online = queue.filter((d: any) => d.status === "online" && !d.currentOrder);
-    setOnlineDrivers(online);
+    const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+    const available = driverQueue.filter((d: any) => d.status === "online" && !d.currentDelivery);
+    setOnlineDrivers(available);
   };
 
   const handleAssignDriver = (order: any) => {
-    if (onlineDrivers.length === 0) {
-      toast.error("No drivers available online");
-      return;
-    }
     setSelectedOrder(order);
-    setIsAssignDialogOpen(true);
+    setShowAssignDialog(true);
   };
 
-  const assignToFirstDriver = () => {
-    if (onlineDrivers.length === 0 || !selectedOrder) {
-      toast.error("No drivers online");
+  const assignToFirstDriver = async () => {
+    if (onlineDrivers.length === 0) {
+      toast.error("No drivers available");
       return;
     }
 
-    const firstDriver = onlineDrivers[0];
+    setAssignmentInProgress(true);
     
-    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const updatedOrders = allOrders.map((o: any) =>
-      o.id === selectedOrder.id
-        ? { ...o, assignedDriver: firstDriver.name, driverId: firstDriver.id, deliveryStatus: "assigned" }
-        : o
-    );
-    localStorage.setItem("orders", JSON.stringify(updatedOrders));
-
-    const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-    const updatedQueue = queue.map((d: any) =>
-      d.id === firstDriver.id
-        ? { ...d, currentOrder: selectedOrder.id, status: "on_delivery" }
-        : d
-    );
-    localStorage.setItem("driverQueue", JSON.stringify(updatedQueue));
-
-    toast.success(`Order assigned to ${firstDriver.name}`);
-    setIsAssignDialogOpen(false);
-    loadData();
+    // Try first driver with 15-second timeout
+    const firstDriver = onlineDrivers[0];
+    toast.info(`Assignment request sent to ${firstDriver.name}...`);
+    
+    const timeout = await simulateDriverResponse(15000);
+    
+    if (timeout) {
+      // First driver missed it, try second
+      if (onlineDrivers.length > 1) {
+        const secondDriver = onlineDrivers[1];
+        toast.info(`First driver missed. Trying ${secondDriver.name}...`);
+        
+        const secondTimeout = await simulateDriverResponse(15000);
+        
+        if (secondTimeout) {
+          // Both missed, broadcast to all
+          toast.info("Broadcasting to all available drivers...");
+          await simulateDriverResponse(30000);
+          broadcastToAllDrivers();
+        } else {
+          assignOrderToDriver(secondDriver);
+        }
+      } else {
+        // Only one driver, broadcast
+        toast.info("Driver missed. Broadcasting to all available drivers...");
+        await simulateDriverResponse(30000);
+        broadcastToAllDrivers();
+      }
+    } else {
+      assignOrderToDriver(firstDriver);
+    }
+    
+    setAssignmentInProgress(false);
   };
 
-  const handleManualAssign = (driverId: string, driverName: string) => {
-    if (!selectedOrder) return;
+  const simulateDriverResponse = (timeoutMs: number): Promise<boolean> => {
+    return new Promise((resolve) => {
+      // Simulate 30% chance of acceptance
+      const accepted = Math.random() > 0.7;
+      const responseTime = Math.random() * timeoutMs;
+      
+      setTimeout(() => {
+        resolve(!accepted); // Return true if timed out (not accepted)
+      }, Math.min(responseTime, timeoutMs));
+    });
+  };
+
+  const broadcastToAllDrivers = () => {
+    toast.success(`Order broadcasted to ${onlineDrivers.length} drivers`);
+    // In real implementation, this would send notifications to all drivers
+  };
+
+  const assignOrderToDriver = (driver: any) => {
+    const updatedOrders = orders.map((order) =>
+      order.id === selectedOrder.id
+        ? {
+            ...order,
+            assignedDriver: driver.id,
+            driverName: driver.name,
+            driverPhone: driver.phone,
+            deliveryStatus: "assigned",
+            assignedAt: new Date().toISOString(),
+          }
+        : order
+    );
 
     const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const updatedOrders = allOrders.map((o: any) =>
-      o.id === selectedOrder.id
-        ? { ...o, assignedDriver: driverName, driverId, deliveryStatus: "assigned" }
-        : o
+    const finalOrders = allOrders.map((order: any) =>
+      order.id === selectedOrder.id ? updatedOrders.find((o) => o.id === selectedOrder.id) : order
     );
-    localStorage.setItem("orders", JSON.stringify(updatedOrders));
 
-    const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-    const updatedQueue = queue.map((d: any) =>
-      d.id === driverId
-        ? { ...d, currentOrder: selectedOrder.id, status: "on_delivery" }
-        : d
+    localStorage.setItem("orders", JSON.stringify(finalOrders));
+    setOrders(updatedOrders);
+
+    // Update driver status
+    const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+    const updatedQueue = driverQueue.map((d: any) =>
+      d.id === driver.id ? { ...d, currentDelivery: selectedOrder.id } : d
     );
     localStorage.setItem("driverQueue", JSON.stringify(updatedQueue));
 
-    toast.success(`Order assigned to ${driverName}`);
-    setIsAssignDialogOpen(false);
-    loadData();
+    toast.success(`Order assigned to ${driver.name}`);
+    setShowAssignDialog(false);
+    setSelectedOrder(null);
+  };
+
+  const handleManualAssign = (driver: any) => {
+    assignOrderToDriver(driver);
   };
 
   const getDeliveryStatusBadge = (status: string) => {
-    const badges: any = {
-      assigned: <Badge variant="outline">Assigned</Badge>,
-      accepted: <Badge className="bg-blue-500">Rider Accepted</Badge>,
-      "on-route": <Badge className="bg-purple-500">On Route</Badge>,
-      delivered: <Badge className="bg-green-500">Delivered</Badge>,
-      completed: <Badge className="bg-gray-500">Completed</Badge>,
+    const statusConfig = {
+      assigned: { label: "Assigned", variant: "secondary" as const, icon: Clock },
+      accepted: { label: "Rider Accepted", variant: "default" as const, icon: CheckCircle2 },
+      "on-route": { label: "On Route", variant: "default" as const, icon: Bike },
+      delivered: { label: "Delivered", variant: "default" as const, icon: CheckCircle2 },
+      completed: { label: "Completed", variant: "outline" as const, icon: CheckCircle2 },
     };
-    return badges[status] || null;
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.assigned;
+    const Icon = config.icon;
+
+    return (
+      <Badge variant={config.variant} className="gap-1">
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
   };
 
   return (
     <KitchenLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Completed Orders & Delivery Status</h1>
-          <p className="text-muted-foreground">Manage rider assignments and track deliveries</p>
+          <h1 className="text-3xl font-bold tracking-tight">Ready for Delivery</h1>
+          <p className="text-muted-foreground mt-1">
+            Assign completed orders to riders for delivery
+          </p>
         </div>
 
-        {doneOrders.length > 0 ? (
-          <div className="grid gap-4">
-            {doneOrders.map((order) => (
-              <Card key={order.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-bold text-lg">{order.id}</h3>
-                      <Badge variant={order.orderType === "walk-in" ? "default" : "secondary"}>
-                        {order.orderType}
-                      </Badge>
-                      {order.deliveryStatus && getDeliveryStatusBadge(order.deliveryStatus)}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-muted-foreground" />
-                        <span>{order.customer?.name || "N/A"}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{order.customer?.phone || "N/A"}</span>
-                      </div>
-                      {order.customer?.address && (
-                        <div className="flex items-center gap-2 md:col-span-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span>{order.customer.address}</span>
-                        </div>
-                      )}
-                      {order.assignedDriver && (
-                        <div className="flex items-center gap-2 md:col-span-2">
-                          <Bike className="h-4 w-4 text-muted-foreground" />
-                          <span>Driver: <strong>{order.assignedDriver}</strong></span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-sm font-medium mb-1">Items:</p>
-                      {order.items?.map((item: any, idx: number) => (
-                        <p key={idx} className="text-sm text-muted-foreground ml-2">
-                          {item.quantity}x {item.name}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="ml-4 flex flex-col items-end gap-2">
-                    <div className="text-right">
-                      <p className="font-bold text-xl">₵{order.total.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">
+        <div className="grid gap-4">
+          {orders.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No completed orders waiting for delivery</p>
+              </CardContent>
+            </Card>
+          ) : (
+            orders.map((order) => (
+              <Card key={order.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg">
+                        Order #{order.id.slice(0, 8)}
+                      </CardTitle>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
                         {new Date(order.timestamp).toLocaleString()}
-                      </p>
+                      </div>
                     </div>
-                    {!order.assignedDriver && (
-                      <Button size="sm" onClick={() => handleAssignDriver(order)}>
-                        <Bike className="h-4 w-4 mr-2" />
-                        Assign to Rider
-                      </Button>
-                    )}
+                    {order.deliveryStatus && getDeliveryStatusBadge(order.deliveryStatus)}
                   </div>
-                </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">
+                          {order.customer?.name || order.customerName || "Walk-in Customer"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{order.customer?.phone || order.customerPhone || "N/A"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          {order.deliveryAddress || order.customer?.address || "No address"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Order Items:</p>
+                      <div className="space-y-1">
+                        {order.items?.map((item: any, idx: number) => (
+                          <p key={idx} className="text-sm text-muted-foreground">
+                            {item.quantity}x {item.name}
+                          </p>
+                        ))}
+                      </div>
+                      <p className="text-lg font-bold">Total: ₵{order.total.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  {order.driverName && (
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm font-medium mb-1">Assigned Driver:</p>
+                      <div className="flex items-center gap-2">
+                        <Bike className="h-4 w-4" />
+                        <span className="text-sm">{order.driverName}</span>
+                        <span className="text-sm text-muted-foreground">• {order.driverPhone}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!order.assignedDriver && (
+                    <Button
+                      onClick={() => handleAssignDriver(order)}
+                      className="w-full"
+                      size="lg"
+                    >
+                      <Bike className="mr-2 h-5 w-5" />
+                      Assign to Rider
+                    </Button>
+                  )}
+                </CardContent>
               </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="p-12 text-center text-muted-foreground">
-            <p className="text-lg">No completed orders yet</p>
-          </Card>
-        )}
+            ))
+          )}
+        </div>
 
         {/* Assign Driver Dialog */}
-        <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-          <DialogContent>
+        <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Assign Rider to Order {selectedOrder?.id}</DialogTitle>
+              <DialogTitle>Assign Rider</DialogTitle>
+              <DialogDescription>
+                Choose a rider for Order #{selectedOrder?.id.slice(0, 8)}
+              </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
-              {onlineDrivers.length > 0 ? (
-                <>
-                  <Button onClick={assignToFirstDriver} className="w-full">
-                    Auto-Assign to First Available Rider ({onlineDrivers[0]?.name})
-                  </Button>
+              <Button
+                onClick={assignToFirstDriver}
+                className="w-full"
+                size="lg"
+                disabled={assignmentInProgress || onlineDrivers.length === 0}
+              >
+                <Radio className="mr-2 h-5 w-5" />
+                {assignmentInProgress
+                  ? "Assignment in progress..."
+                  : "Auto-Assign (First in Queue)"}
+              </Button>
 
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">Or select manually</span>
-                    </div>
-                  </div>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or select manually</span>
+                </div>
+              </div>
 
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {onlineDrivers.map((driver) => (
-                      <Card key={driver.id} className="p-3 hover:bg-muted/50 cursor-pointer" onClick={() => handleManualAssign(driver.id, driver.name)}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Bike className="h-5 w-5" />
-                            <div>
-                              <p className="font-medium">{driver.name}</p>
-                              <p className="text-xs text-muted-foreground">{driver.phone}</p>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-green-600 border-green-600">
-                            Online
-                          </Badge>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {onlineDrivers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No riders available
+                  </p>
+                ) : (
+                  onlineDrivers.map((driver, index) => (
+                    <Button
+                      key={driver.id}
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => handleManualAssign(driver)}
+                      disabled={assignmentInProgress}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <Badge variant="secondary">#{index + 1}</Badge>
+                        <div className="flex-1 text-left">
+                          <p className="font-medium">{driver.name}</p>
+                          <p className="text-xs text-muted-foreground">{driver.phone}</p>
                         </div>
-                      </Card>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No riders currently online</p>
-              )}
+                        <Bike className="h-4 w-4" />
+                      </div>
+                    </Button>
+                  ))
+                )}
+              </div>
             </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
+                Cancel
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
     </KitchenLayout>
   );
-};
-
-export default KitchenDone;
+}

@@ -1,27 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { 
   ShoppingCart, 
-  ClipboardList, 
   Clock, 
   CheckCircle2, 
   Truck, 
   TrendingUp,
-  Plus,
-  ChefHat,
-  Settings,
   BarChart3,
   DollarSign
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AddOrderForm } from "@/components/kitchen/AddOrderForm";
 import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 
 export default function KitchenDashboard() {
   const navigate = useNavigate();
-  const [showAddOrder, setShowAddOrder] = useState(false);
   const [stats, setStats] = useState({
     todaySales: 0,
     totalOrders: 0,
@@ -85,7 +77,7 @@ export default function KitchenDashboard() {
     {
       title: "Orders in Queue",
       value: stats.ordersInQueue,
-      icon: ClipboardList,
+      icon: ShoppingCart,
       color: "text-accent",
       bgColor: "bg-accent/10"
     },
@@ -114,38 +106,24 @@ export default function KitchenDashboard() {
 
   const actionButtons = [
     {
-      title: "Make Sales",
-      description: "Create walk-in customer orders (POS Mode)",
-      icon: Plus,
+      title: "Sales",
+      description: "Manage walk-in and online orders",
+      icon: ShoppingCart,
       color: "bg-primary hover:bg-primary/90",
-      onClick: () => setShowAddOrder(true)
-    },
-    {
-      title: "Kitchen Workflow",
-      description: "View and manage order pipeline",
-      icon: ChefHat,
-      color: "bg-secondary hover:bg-secondary/90",
       onClick: () => navigate("/kitchen/orders")
     },
     {
       title: "Rider Assignment",
-      description: "Configure delivery settings and auto-assign",
+      description: "View rider queue and manage assignments",
       icon: Truck,
-      color: "bg-accent hover:bg-accent/90",
+      color: "bg-secondary hover:bg-secondary/90",
       onClick: () => navigate("/kitchen/settings")
-    },
-    {
-      title: "Menu & Items",
-      description: "Manage meals, prices, and availability",
-      icon: ClipboardList,
-      color: "bg-primary hover:bg-primary/90",
-      onClick: () => navigate("/manager/menu")
     },
     {
       title: "Sales Reports",
       description: "View daily, weekly sales and order history",
       icon: BarChart3,
-      color: "bg-secondary hover:bg-secondary/90",
+      color: "bg-accent hover:bg-accent/90",
       onClick: () => navigate("/kitchen/reports")
     }
   ];
@@ -201,15 +179,6 @@ export default function KitchenDashboard() {
         </div>
       </div>
 
-        {/* Add Order Dialog */}
-        <Dialog open={showAddOrder} onOpenChange={setShowAddOrder}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create Walk-in Order</DialogTitle>
-            </DialogHeader>
-            <AddOrderForm onClose={() => setShowAddOrder(false)} />
-          </DialogContent>
-        </Dialog>
       </div>
     </KitchenLayout>
   );

@@ -1,25 +1,20 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import kokoKingLogo from "@/assets/koko-king-logo.png";
-import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AddOrderForm } from "@/components/kitchen/AddOrderForm";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Printer, Store, Globe } from "lucide-react";
+import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
+import { toast } from "sonner";
 
-const KitchenOrders = () => {
-  const navigate = useNavigate();
+export default function KitchenOrders() {
   const [orders, setOrders] = useState<any[]>([]);
-  const [notifiedOrders, setNotifiedOrders] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    const isAuthenticated = localStorage.getItem("kitchenAuth");
-    if (!isAuthenticated) {
-      navigate("/kitchen/login");
-    }
-  }, [navigate]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAddOrder, setShowAddOrder] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("all");
 
   useEffect(() => {
     loadOrders();
@@ -29,196 +24,282 @@ const KitchenOrders = () => {
 
   const loadOrders = () => {
     const storedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const activeOrders = storedOrders.filter(
-      (order: any) => order.status !== "completed" && order.status !== "cancelled"
+    setOrders(storedOrders);
+  };
+
+  const handleStatusChange = (orderId: string, newStatus: string) => {
+    const updatedOrders = orders.map((order) =>
+      order.id === orderId
+        ? { ...order, status: newStatus, updatedAt: new Date().toISOString() }
+        : order
     );
-    
-    const pendingOrders = activeOrders.filter((order: any) => order.status === "pending");
-    pendingOrders.forEach((order: any) => {
-      if (!notifiedOrders.has(order.id)) {
-        playNotificationSound();
-        showNewOrderNotification();
-        setNotifiedOrders(prev => new Set([...prev, order.id]));
-      }
-    });
-    
-    setOrders(activeOrders);
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+    setOrders(updatedOrders);
+    toast.success(`Order ${orderId.slice(0, 8)} moved to ${newStatus}`);
   };
 
-  const playNotificationSound = () => {
-    const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVKni7KxfGAg9lunzvmwhBTGH0fPTgjMGHm7A7+OZSA0PVKni7KxfGAg=");
-    audio.play().catch(() => {});
-  };
+  const printReceipt = (order: any) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
 
-  const showNewOrderNotification = () => {
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("New Order!", {
-        body: "A new order has arrived!",
-        icon: kokoKingLogo,
-      });
-    }
-  };
-
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  const handleStatusUpdate = (orderId: string, newStatus: string) => {
-    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const updated = allOrders.map((order: any) =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    );
-    localStorage.setItem("orders", JSON.stringify(updated));
-    loadOrders();
-    toast.success(`Order ${orderId} updated to ${newStatus}`);
-  };
-
-  const handlePrintOrder = (order: any) => {
-    const printContent = `
-KOKO KING EXPRESS
-==================
-Order ID: ${order.id}
-Type: ${order.orderType === "walk-in" ? "WALK-IN" : "ONLINE"}
-Date: ${new Date(order.timestamp).toLocaleString()}
-Customer: ${order.customer.name}
-Phone: ${order.customer.phone}
-
-ITEMS:
-${order.items.map((item: any) => `${item.quantity}x ${item.name} - ₵${(item.price * item.quantity).toFixed(2)}`).join('\n')}
-
-TOTAL: ₵${order.total.toFixed(2)}
-==================
+    const receiptHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Receipt - Order ${order.id.slice(0, 8)}</title>
+          <style>
+            body { font-family: 'Courier New', monospace; width: 300px; margin: 20px auto; }
+            h2 { text-align: center; margin-bottom: 20px; }
+            .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+            .order-info { margin-bottom: 15px; }
+            .items { border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 10px 0; }
+            .item { display: flex; justify-content: space-between; margin: 5px 0; }
+            .total { font-weight: bold; font-size: 1.2em; text-align: right; margin-top: 10px; }
+            .footer { text-align: center; margin-top: 20px; font-size: 0.9em; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>KOKO KING</h2>
+            <p>Order #${order.id.slice(0, 8)}</p>
+            <p>${new Date(order.timestamp).toLocaleString()}</p>
+          </div>
+          <div class="order-info">
+            <p><strong>Customer:</strong> ${order.customer?.name || order.customerName || "Walk-in"}</p>
+            <p><strong>Phone:</strong> ${order.customer?.phone || order.customerPhone || "N/A"}</p>
+            <p><strong>Type:</strong> ${order.orderType || "Walk-in"}</p>
+          </div>
+          <div class="items">
+            ${order.items.map((item: any) => `
+              <div class="item">
+                <span>${item.quantity}x ${item.name}</span>
+                <span>₵${(item.price * item.quantity).toFixed(2)}</span>
+              </div>
+              ${item.extras?.length > 0 ? item.extras.map((extra: any) => `
+                <div class="item" style="padding-left: 20px; font-size: 0.9em;">
+                  <span>+ ${extra.name}</span>
+                  <span>₵${extra.price.toFixed(2)}</span>
+                </div>
+              `).join('') : ''}
+            `).join('')}
+          </div>
+          <div class="total">
+            TOTAL: ₵${order.total.toFixed(2)}
+          </div>
+          <div class="footer">
+            <p>Thank you for your order!</p>
+            <p>Visit us again soon</p>
+          </div>
+        </body>
+      </html>
     `;
-    
-    const printWindow = window.open('', '', 'height=600,width=800');
-    if (printWindow) {
-      printWindow.document.write('<pre>' + printContent + '</pre>');
-      printWindow.document.close();
+
+    printWindow.document.write(receiptHTML);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
       printWindow.print();
-    }
+      printWindow.close();
+    }, 250);
   };
 
-  const renderOrderCard = (order: any) => (
-    <Card key={order.id} className="p-4 mb-4">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h3 className="font-bold text-lg">{order.id}</h3>
-          <Badge variant={order.orderType === "walk-in" ? "default" : "secondary"}>
-            {order.orderType === "walk-in" ? "Walk-in" : "Online"}
-          </Badge>
-        </div>
-        <div className="text-right">
-          <p className="font-semibold text-lg">₵{order.total.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground">
-            {new Date(order.timestamp).toLocaleTimeString()}
-          </p>
-        </div>
-      </div>
+  const filteredOrders = orders.filter((order) => {
+    const matchesSearch = 
+      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (order.customer?.name || order.customerName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (order.customer?.phone || order.customerPhone || "").includes(searchQuery);
 
-      <div className="space-y-2 mb-3">
-        <p className="text-sm"><strong>Customer:</strong> {order.customer?.name || "N/A"}</p>
-        <p className="text-sm"><strong>Phone:</strong> {order.customer?.phone || "N/A"}</p>
-        <div className="border-t pt-2 mt-2">
-          <p className="text-sm font-semibold mb-1">Items:</p>
-          {order.items?.map((item: any, idx: number) => (
-            <p key={idx} className="text-sm ml-2">
-              {item.quantity}x {item.name}
-              {item.extras && item.extras.length > 0 && (
-                <span className="text-xs text-muted-foreground ml-2">
-                  + {item.extras.map((e: any) => e.name).join(", ")}
-                </span>
-              )}
-            </p>
-          ))}
-        </div>
-      </div>
+    const matchesTab = 
+      selectedTab === "all" ||
+      (selectedTab === "walkin" && order.orderType === "walk-in") ||
+      (selectedTab === "online" && order.orderType === "online");
 
-      <div className="flex gap-2">
-        {order.status === "pending" && (
-          <>
-            <Button size="sm" onClick={() => handlePrintOrder(order)} variant="outline">
-              <Printer className="h-4 w-4 mr-1" />
-              Print
-            </Button>
-            <Button size="sm" onClick={() => handleStatusUpdate(order.id, "confirmed")}>
-              Confirm
-            </Button>
-          </>
-        )}
-        {order.status === "confirmed" && (
-          <Button size="sm" onClick={() => handleStatusUpdate(order.id, "preparing")}>
-            Start Preparing
-          </Button>
-        )}
-        {order.status === "preparing" && (
-          <Button size="sm" onClick={() => handleStatusUpdate(order.id, "completed")}>
-            Mark as Done
-          </Button>
-        )}
-      </div>
-    </Card>
-  );
+    return matchesSearch && matchesTab;
+  });
 
-  const pendingOrders = orders.filter((o) => o.status === "pending");
-  const confirmedOrders = orders.filter((o) => o.status === "confirmed");
-  const preparingOrders = orders.filter((o) => o.status === "preparing");
+  const getOrdersByStatus = (status: string) => {
+    return filteredOrders.filter((order) => order.status === status);
+  };
+
+  const walkInCount = orders.filter((o) => o.orderType === "walk-in").length;
+  const onlineCount = orders.filter((o) => o.orderType === "online").length;
 
   return (
     <KitchenLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Kitchen Workflow</h1>
-          <p className="text-muted-foreground">Manage incoming and active orders</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Sales</h1>
+            <p className="text-muted-foreground mt-1">Manage walk-in and online orders</p>
+          </div>
+          <Button onClick={() => setShowAddOrder(true)} size="lg" className="gap-2">
+            <Plus className="h-5 w-5" />
+            Add Walk-in Order
+          </Button>
         </div>
 
-        <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="pending">
-              New Orders ({pendingOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="confirmed">
-              Confirmed ({confirmedOrders.length})
-            </TabsTrigger>
-            <TabsTrigger value="preparing">
-              Preparing ({preparingOrders.length})
-            </TabsTrigger>
-          </TabsList>
+        {/* Search and Filters */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by order ID, customer name, or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full md:w-auto">
+            <TabsList>
+              <TabsTrigger value="all">
+                All Orders
+              </TabsTrigger>
+              <TabsTrigger value="walkin" className="gap-2">
+                <Store className="h-4 w-4" />
+                Walk-in ({walkInCount})
+              </TabsTrigger>
+              <TabsTrigger value="online" className="gap-2">
+                <Globe className="h-4 w-4" />
+                Online ({onlineCount})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-          <TabsContent value="pending" className="mt-6">
-            {pendingOrders.length > 0 ? (
-              pendingOrders.map(renderOrderCard)
-            ) : (
-              <Card className="p-8 text-center text-muted-foreground">
-                No pending orders
-              </Card>
-            )}
-          </TabsContent>
+        {/* Order Pipeline */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Pending Orders */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>New Orders</span>
+                <Badge variant="secondary">{getOrdersByStatus("pending").length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {getOrdersByStatus("pending").length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No new orders</p>
+              ) : (
+                getOrdersByStatus("pending").map((order) => (
+                  <Card key={order.id} className="p-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-bold">#{order.id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
+                      </div>
+                      <Badge>{order.orderType}</Badge>
+                    </div>
+                    <div className="space-y-1 mb-3">
+                      {order.items?.map((item: any, i: number) => (
+                        <p key={i} className="text-sm">{item.quantity}x {item.name}</p>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleStatusChange(order.id, "confirmed")} className="flex-1">Confirm</Button>
+                      <Button size="sm" variant="outline" onClick={() => printReceipt(order)}><Printer className="h-4 w-4" /></Button>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
 
-          <TabsContent value="confirmed" className="mt-6">
-            {confirmedOrders.length > 0 ? (
-              confirmedOrders.map(renderOrderCard)
-            ) : (
-              <Card className="p-8 text-center text-muted-foreground">
-                No confirmed orders
-              </Card>
-            )}
-          </TabsContent>
+          {/* Confirmed Orders */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Confirmed</span>
+                <Badge variant="secondary">{getOrdersByStatus("confirmed").length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {getOrdersByStatus("confirmed").length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No confirmed orders</p>
+              ) : (
+                getOrdersByStatus("confirmed").map((order) => (
+                  <Card key={order.id} className="p-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-bold">#{order.id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={() => handleStatusChange(order.id, "preparing")} className="w-full">Start Preparing</Button>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
 
-          <TabsContent value="preparing" className="mt-6">
-            {preparingOrders.length > 0 ? (
-              preparingOrders.map(renderOrderCard)
-            ) : (
-              <Card className="p-8 text-center text-muted-foreground">
-                No orders being prepared
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+          {/* Preparing Orders */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Preparing</span>
+                <Badge variant="secondary">{getOrdersByStatus("preparing").length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {getOrdersByStatus("preparing").length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No orders preparing</p>
+              ) : (
+                getOrdersByStatus("preparing").map((order) => (
+                  <Card key={order.id} className="p-3 bg-accent/10">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-bold">#{order.id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={() => handleStatusChange(order.id, "completed")} className="w-full">Mark Ready</Button>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Ready/Completed Orders */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Ready</span>
+                <Badge variant="secondary">{getOrdersByStatus("completed").length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {getOrdersByStatus("completed").length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No ready orders</p>
+              ) : (
+                getOrdersByStatus("completed").map((order) => (
+                  <Card key={order.id} className="p-3 space-y-2 border-green-500">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold">#{order.id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
+                        <p className="text-sm font-bold mt-1">₵{order.total.toFixed(2)}</p>
+                      </div>
+                      <Badge variant="outline" className="bg-green-500/10">Ready</Badge>
+                    </div>
+                    <Button size="sm" variant="default" className="w-full" onClick={() => window.location.href = "/kitchen/done"}>
+                      Assign to Driver
+                    </Button>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Add Order Dialog */}
+        <Dialog open={showAddOrder} onOpenChange={setShowAddOrder}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Walk-in Order</DialogTitle>
+            </DialogHeader>
+            <AddOrderForm onClose={() => setShowAddOrder(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
     </KitchenLayout>
   );
-};
-
-export default KitchenOrders;
+}
