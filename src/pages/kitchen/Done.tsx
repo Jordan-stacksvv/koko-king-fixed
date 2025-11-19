@@ -215,16 +215,28 @@ const KitchenDone = () => {
 
                   <div className="flex justify-between items-center pt-3 border-t">
                     <span className="font-bold">Total: ₵{order.total.toFixed(2)}</span>
-                    {order.assignedDriver ? (
-                      <Badge className="bg-blue-500">
-                        Assigned to {order.assignedDriver.name}
-                      </Badge>
-                    ) : (
-                      <Button onClick={() => handleAssignDriver(order)} size="sm">
-                        <TruckIcon className="h-4 w-4 mr-2" />
-                        Assign to Rider
-                      </Button>
-                    )}
+                    <div className="flex gap-2 items-center">
+                      {order.status === "out-for-delivery" ? (
+                        <Badge className="bg-blue-500 text-white">
+                          <TruckIcon className="h-3 w-3 mr-1" />
+                          Out for Delivery - {order.assignedDriver?.name}
+                        </Badge>
+                      ) : order.status === "delivered" ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Delivered
+                        </Badge>
+                      ) : order.assignedDriver ? (
+                        <Badge className="bg-orange-500 text-white">
+                          Assigned to {order.assignedDriver.name}
+                        </Badge>
+                      ) : (
+                        <Button onClick={() => handleAssignDriver(order)} size="sm">
+                          <TruckIcon className="h-4 w-4 mr-2" />
+                          Assign to Rider
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
