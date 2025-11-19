@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Bike, Clock, CheckCircle2, Radio, User, MapPin, Phone } from "lucide-react";
+import { Bike, Clock, CheckCircle2, Radio, User, MapPin, Phone, Package } from "lucide-react";
 import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 import { toast } from "sonner";
 
@@ -22,8 +22,11 @@ export default function KitchenDone() {
 
   const loadData = () => {
     const storedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const completedOrders = storedOrders.filter((order: any) => order.status === "completed");
-    setOrders(completedOrders);
+    // Show orders that are done (ready for assignment) and those with delivery status
+    const doneOrders = storedOrders.filter((order: any) => 
+      order.status === "done" || order.deliveryStatus
+    );
+    setOrders(doneOrders);
 
     const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
     const available = driverQueue.filter((d: any) => d.status === "online" && !d.currentDelivery);
@@ -232,7 +235,7 @@ export default function KitchenDone() {
                     </div>
                   )}
 
-                  {!order.assignedDriver && (
+                  {order.deliveryMethod === "delivery" && !order.assignedDriver && (
                     <Button
                       onClick={() => handleAssignDriver(order)}
                       className="w-full"
@@ -241,6 +244,14 @@ export default function KitchenDone() {
                       <Bike className="mr-2 h-5 w-5" />
                       Assign to Rider
                     </Button>
+                  )}
+                  
+                  {order.deliveryMethod === "pickup" && (
+                    <div className="bg-muted p-3 rounded-lg text-center">
+                      <Package className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm font-medium">Ready for Pickup</p>
+                      <p className="text-xs text-muted-foreground">Customer can collect order</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>

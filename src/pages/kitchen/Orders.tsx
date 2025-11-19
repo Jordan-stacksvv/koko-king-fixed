@@ -18,9 +18,32 @@ export default function KitchenOrders() {
 
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(loadOrders, 3000);
+    checkAndResetDaily();
+    const interval = setInterval(() => {
+      loadOrders();
+      checkAndResetDaily();
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const checkAndResetDaily = () => {
+    const lastReset = localStorage.getItem("lastOrderReset");
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(0, 0, 0, 0);
+    
+    if (!lastReset || new Date(lastReset) < midnight) {
+      // Archive old orders (move to history for admin/manager)
+      const currentOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const orderHistory = JSON.parse(localStorage.getItem("orderHistory") || "[]");
+      orderHistory.push(...currentOrders);
+      localStorage.setItem("orderHistory", JSON.stringify(orderHistory));
+      localStorage.setItem("orders", "[]");
+      localStorage.setItem("lastOrderReset", now.toISOString());
+      setOrders([]);
+      toast.info("New day started - orders archived");
+    }
+  };
 
   const loadOrders = () => {
     const storedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
@@ -36,6 +59,21 @@ export default function KitchenOrders() {
     localStorage.setItem("orders", JSON.stringify(updatedOrders));
     setOrders(updatedOrders);
     toast.success(`Order ${orderId.slice(0, 8)} moved to ${newStatus}`);
+  };
+
+  const handleCompleteOrder = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    // If pickup, mark as completed immediately
+    if (order.deliveryMethod === "pickup") {
+      handleStatusChange(orderId, "completed");
+      toast.success("Order completed - Ready for pickup!");
+    } else {
+      // If delivery, move to done (ready for rider assignment)
+      handleStatusChange(orderId, "done");
+      toast.success("Order ready for delivery assignment!");
+    }
   };
 
   const printReceipt = (order: any) => {
@@ -251,40 +289,62 @@ export default function KitchenOrders() {
                         <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
                       </div>
                     </div>
-                    <Button size="sm" onClick={() => handleStatusChange(order.id, "completed")} className="w-full">Mark Ready</Button>
+                    <Button size="sm" onClick={() => handleCompleteOrder(order.id)} className="w-full">Mark Ready</Button>
                   </Card>
                 ))
               )}
             </CardContent>
           </Card>
 
-          {/* Ready/Completed Orders */}
+          {/* Ready Orders - Split by Delivery/Pickup */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Ready</span>
-                <Badge variant="secondary">{getOrdersByStatus("completed").length}</Badge>
+                <Badge variant="secondary">{getOrdersByStatus("done").length + getOrdersByStatus("completed").length}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {getOrdersByStatus("completed").length === 0 ? (
+              {(getOrdersByStatus("done").length + getOrdersByStatus("completed").length) === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">No ready orders</p>
               ) : (
-                getOrdersByStatus("completed").map((order) => (
-                  <Card key={order.id} className="p-3 space-y-2 border-green-500">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-bold">#{order.id.slice(0, 8)}</p>
-                        <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
-                        <p className="text-sm font-bold mt-1">₵{order.total.toFixed(2)}</p>
+                <>
+                  {getOrdersByStatus("done").map((order) => (
+                    <Card key={order.id} className="p-3 space-y-2 border-green-500">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-bold">#{order.id.slice(0, 8)}</p>
+                          <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
+                          <p className="text-sm font-bold mt-1">₵{order.total.toFixed(2)}</p>
+                        </div>
+                        <Badge variant="outline" className="bg-green-500/10">Delivery</Badge>
                       </div>
-                      <Badge variant="outline" className="bg-green-500/10">Ready</Badge>
-                    </div>
-                    <Button size="sm" variant="default" className="w-full" onClick={() => window.location.href = "/kitchen/done"}>
-                      Assign to Driver
-                    </Button>
-                  </Card>
-                ))
+                      <Button size="sm" variant="outline" onClick={() => printReceipt(order)} className="w-full">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Print Receipt
+                      </Button>
+                      <Button size="sm" variant="default" className="w-full" onClick={() => window.location.href = "/kitchen/done"}>
+                        Assign to Driver
+                      </Button>
+                    </Card>
+                  ))}
+                  {getOrdersByStatus("completed").map((order) => (
+                    <Card key={order.id} className="p-3 space-y-2 border-blue-500">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-bold">#{order.id.slice(0, 8)}</p>
+                          <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
+                          <p className="text-sm font-bold mt-1">₵{order.total.toFixed(2)}</p>
+                        </div>
+                        <Badge variant="outline" className="bg-blue-500/10">Pickup</Badge>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => printReceipt(order)} className="w-full">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Print Receipt
+                      </Button>
+                    </Card>
+                  ))}
+                </>
               )}
             </CardContent>
           </Card>

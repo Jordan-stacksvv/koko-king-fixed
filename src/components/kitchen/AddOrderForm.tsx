@@ -18,6 +18,7 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFullMenu, setShowFullMenu] = useState(false);
   const [dialogItem, setDialogItem] = useState<any>(null);
+  const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">("pickup");
 
   const handleAddItem = (item: any) => {
     setDialogItem(item);
@@ -65,6 +66,10 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
       toast.error("Please fill customer details");
       return;
     }
+    if (deliveryMethod === "delivery" && !customer.address) {
+      toast.error("Please enter delivery address");
+      return;
+    }
     if (selectedItems.length === 0) {
       toast.error("Please add at least one item");
       return;
@@ -84,7 +89,8 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
       status: "pending",
       orderType: "walk-in",
       timestamp: new Date().toISOString(),
-      deliveryMethod: "pickup",
+      deliveryMethod,
+      deliveryAddress: deliveryMethod === "delivery" ? customer.address : null,
     };
 
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
@@ -97,6 +103,28 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <div className="space-y-4 max-h-[75vh] overflow-y-auto">
+      <div>
+        <Label>Order Type *</Label>
+        <div className="flex gap-2 mt-2">
+          <Button
+            type="button"
+            variant={deliveryMethod === "pickup" ? "default" : "outline"}
+            onClick={() => setDeliveryMethod("pickup")}
+            className="flex-1"
+          >
+            Pickup
+          </Button>
+          <Button
+            type="button"
+            variant={deliveryMethod === "delivery" ? "default" : "outline"}
+            onClick={() => setDeliveryMethod("delivery")}
+            className="flex-1"
+          >
+            Delivery
+          </Button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label>Customer Name *</Label>
@@ -115,6 +143,17 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
           />
         </div>
       </div>
+
+      {deliveryMethod === "delivery" && (
+        <div>
+          <Label>Delivery Address *</Label>
+          <Input
+            value={customer.address}
+            onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
+            placeholder="Enter delivery address"
+          />
+        </div>
+      )}
 
       <div>
         <div className="flex justify-between items-center mb-2">
