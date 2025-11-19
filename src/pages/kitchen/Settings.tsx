@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Settings as SettingsIcon, Truck, Bell, MapPin } from "lucide-react";
+import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 
 export default function KitchenSettings() {
   const [settings, setSettings] = useState({
@@ -34,13 +35,14 @@ export default function KitchenSettings() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Kitchen Settings</h1>
-        <p className="text-muted-foreground mt-1">
-          Configure automation and delivery preferences
-        </p>
-      </div>
+    <KitchenLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Kitchen Settings</h1>
+          <p className="text-muted-foreground mt-1">
+            Configure automation and delivery preferences
+          </p>
+        </div>
 
       <div className="grid gap-6">
         {/* Rider Assignment Settings */}
@@ -164,6 +166,7 @@ export default function KitchenSettings() {
           </Button>
         </div>
       </div>
-    </div>
+      </div>
+    </KitchenLayout>
   );
 }

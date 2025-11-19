@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AddOrderForm } from "@/components/kitchen/AddOrderForm";
+import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 
 export default function KitchenDashboard() {
   const navigate = useNavigate();
@@ -71,43 +72,43 @@ export default function KitchenDashboard() {
       title: "Today's Sales",
       value: `₵${stats.todaySales.toFixed(2)}`,
       icon: DollarSign,
-      color: "text-green-600",
-      bgColor: "bg-green-50"
+      color: "text-primary",
+      bgColor: "bg-primary/10"
     },
     {
       title: "Total Orders Today",
       value: stats.totalOrders,
       icon: ShoppingCart,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50"
+      color: "text-secondary",
+      bgColor: "bg-secondary/10"
     },
     {
       title: "Orders in Queue",
       value: stats.ordersInQueue,
       icon: ClipboardList,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50"
+      color: "text-accent",
+      bgColor: "bg-accent/10"
     },
     {
       title: "Orders Preparing",
       value: stats.ordersPreparing,
       icon: Clock,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50"
+      color: "text-muted-foreground",
+      bgColor: "bg-muted"
     },
     {
       title: "Ongoing Deliveries",
       value: stats.ongoingDeliveries,
       icon: Truck,
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-50"
+      color: "text-secondary",
+      bgColor: "bg-secondary/10"
     },
     {
       title: "Completed Orders",
       value: stats.completedOrders,
       icon: CheckCircle2,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50"
+      color: "text-primary",
+      bgColor: "bg-primary/10"
     }
   ];
 
@@ -123,40 +124,41 @@ export default function KitchenDashboard() {
       title: "Kitchen Workflow",
       description: "View and manage order pipeline",
       icon: ChefHat,
-      color: "bg-orange-500 hover:bg-orange-600",
+      color: "bg-secondary hover:bg-secondary/90",
       onClick: () => navigate("/kitchen/orders")
     },
     {
       title: "Rider Assignment",
       description: "Configure delivery settings and auto-assign",
       icon: Truck,
-      color: "bg-blue-500 hover:bg-blue-600",
+      color: "bg-accent hover:bg-accent/90",
       onClick: () => navigate("/kitchen/settings")
     },
     {
       title: "Menu & Items",
       description: "Manage meals, prices, and availability",
       icon: ClipboardList,
-      color: "bg-purple-500 hover:bg-purple-600",
+      color: "bg-primary hover:bg-primary/90",
       onClick: () => navigate("/manager/menu")
     },
     {
       title: "Sales Reports",
       description: "View daily, weekly sales and order history",
       icon: BarChart3,
-      color: "bg-emerald-500 hover:bg-emerald-600",
+      color: "bg-secondary hover:bg-secondary/90",
       onClick: () => navigate("/kitchen/reports")
     }
   ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Kitchen Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          Monitor operations and manage orders in real-time
-        </p>
-      </div>
+    <KitchenLayout>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Kitchen Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
+            Monitor operations and manage orders in real-time
+          </p>
+        </div>
 
       {/* Live Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -199,15 +201,16 @@ export default function KitchenDashboard() {
         </div>
       </div>
 
-      {/* Add Order Dialog */}
-      <Dialog open={showAddOrder} onOpenChange={setShowAddOrder}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Walk-in Order</DialogTitle>
-          </DialogHeader>
-          <AddOrderForm onClose={() => setShowAddOrder(false)} />
-        </DialogContent>
-      </Dialog>
-    </div>
+        {/* Add Order Dialog */}
+        <Dialog open={showAddOrder} onOpenChange={setShowAddOrder}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Walk-in Order</DialogTitle>
+            </DialogHeader>
+            <AddOrderForm onClose={() => setShowAddOrder(false)} />
+          </DialogContent>
+        </Dialog>
+      </div>
+    </KitchenLayout>
   );
 }
