@@ -41,7 +41,11 @@ import KitchenDisplay from "./pages/kitchen/Display";
 
 // Driver Routes
 import DriverLogin from "./pages/driver/Login";
+import DriverSignup from "./pages/driver/Signup";
+import DriverDashboard from "./pages/driver/Dashboard";
+import DriverProfile from "./pages/driver/Profile";
 import DriverDeliveries from "./pages/driver/Deliveries";
+import AdminDrivers from "./pages/admin/Drivers";
 
 import NotFound from "./pages/NotFound";
 
@@ -91,7 +95,13 @@ const App = () => (
 
           {/* Driver Routes */}
           <Route path="/driver/login" element={<DriverLogin />} />
+          <Route path="/driver/signup" element={<DriverSignup />} />
+          <Route path="/driver/dashboard" element={<DriverDashboard />} />
+          <Route path="/driver/profile" element={<DriverProfile />} />
           <Route path="/driver/deliveries" element={<DriverDeliveries />} />
+
+          {/* Admin Driver Management */}
+          <Route path="/admin/drivers" element={<AdminDrivers />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>

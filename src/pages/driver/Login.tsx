@@ -115,20 +115,17 @@ const DriverLogin = () => {
             </TabsContent>
             
             <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Phone Number</Label>
-                  <Input
-                    id="signup-phone"
-                    type="tel"
-                    placeholder="0XX XXX XXXX"
-                    value={signupPhone}
-                    onChange={(e) => setSignupPhone(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full">Sign Up</Button>
-              </form>
+              <div className="space-y-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Drivers must apply through the application form. Quick signups are not available.
+                </p>
+                <Button 
+                  className="w-full"
+                  onClick={() => navigate("/driver/signup")}
+                >
+                  Go to Application Form
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
           

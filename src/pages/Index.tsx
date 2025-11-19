@@ -5,6 +5,7 @@ import { LocationSelector } from "@/components/LocationSelector";
 import { MenuItem } from "@/components/MenuItem";
 import { FloatingCart } from "@/components/FloatingCart";
 import { Footer } from "@/components/Footer";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { categories, menuItems, restaurants } from "@/data/menuItems";
@@ -159,6 +160,7 @@ const Index = () => {
 
       <FloatingCart />
       <Footer />
+      <PWAInstallPrompt />
     </div>
   );
 };
