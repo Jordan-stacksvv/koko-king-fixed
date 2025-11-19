@@ -13,7 +13,10 @@ import StoreLocator from "./pages/StoreLocator";
 
 // Kitchen Routes
 import KitchenLogin from "./pages/kitchen/Login";
+import KitchenDashboard from "./pages/kitchen/Dashboard";
 import KitchenOrders from "./pages/kitchen/Orders";
+import KitchenReports from "./pages/kitchen/Reports";
+import KitchenSettings from "./pages/kitchen/Settings";
 
 // Manager Routes
 import ManagerLogin from "./pages/manager/Login";
@@ -70,9 +73,12 @@ const App = () => (
           
           {/* Kitchen Routes */}
           <Route path="/kitchen/login" element={<KitchenLogin />} />
+          <Route path="/kitchen/dashboard" element={<KitchenDashboard />} />
           <Route path="/kitchen/orders" element={<KitchenOrders />} />
           <Route path="/kitchen/display" element={<KitchenDisplay />} />
           <Route path="/kitchen/done" element={<KitchenDone />} />
+          <Route path="/kitchen/reports" element={<KitchenReports />} />
+          <Route path="/kitchen/settings" element={<KitchenSettings />} />
           
           {/* Manager Routes */}
           <Route path="/manager/login" element={<ManagerLogin />} />

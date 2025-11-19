@@ -4,9 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LogOut, Bike } from "lucide-react";
-import kokoKingLogo from "@/assets/koko-king-logo.png";
+import { Bike, MapPin, Phone, Package } from "lucide-react";
 import { toast } from "sonner";
+import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 
 const KitchenDone = () => {
   const navigate = useNavigate();
@@ -35,11 +35,6 @@ const KitchenDone = () => {
     setOnlineDrivers(online);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("kitchenAuth");
-    navigate("/kitchen/login");
-  };
-
   const handleAssignDriver = (order: any) => {
     if (onlineDrivers.length === 0) {
       toast.error("No drivers available online");
@@ -57,7 +52,6 @@ const KitchenDone = () => {
 
     const firstDriver = onlineDrivers[0];
     
-    // Update order with assigned driver
     const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
     const updatedOrders = allOrders.map((o: any) =>
       o.id === selectedOrder.id
@@ -66,7 +60,6 @@ const KitchenDone = () => {
     );
     localStorage.setItem("orders", JSON.stringify(updatedOrders));
 
-    // Update driver queue
     const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
     const updatedQueue = queue.map((d: any) =>
       d.id === firstDriver.id
@@ -83,7 +76,6 @@ const KitchenDone = () => {
   const handleManualAssign = (driverId: string, driverName: string) => {
     if (!selectedOrder) return;
 
-    // Update order with assigned driver
     const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
     const updatedOrders = allOrders.map((o: any) =>
       o.id === selectedOrder.id
@@ -92,7 +84,6 @@ const KitchenDone = () => {
     );
     localStorage.setItem("orders", JSON.stringify(updatedOrders));
 
-    // Update driver queue
     const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
     const updatedQueue = queue.map((d: any) =>
       d.id === driverId
@@ -106,172 +97,146 @@ const KitchenDone = () => {
     loadData();
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <img 
-                src={kokoKingLogo}
-                alt="Koko King" 
-                className="h-12 w-auto"
-              />
-              <div>
-                <h1 className="text-2xl font-bold">Done Orders</h1>
-                <p className="text-sm text-muted-foreground">
-                  Completed orders ready for delivery
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </div>
+  const getDeliveryStatusBadge = (status: string) => {
+    const badges: any = {
+      assigned: <Badge variant="outline">Assigned</Badge>,
+      accepted: <Badge className="bg-blue-500">Rider Accepted</Badge>,
+      "on-route": <Badge className="bg-purple-500">On Route</Badge>,
+      delivered: <Badge className="bg-green-500">Delivered</Badge>,
+      completed: <Badge className="bg-gray-500">Completed</Badge>,
+    };
+    return badges[status] || null;
+  };
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {doneOrders.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">No completed orders yet</p>
-          </Card>
-        ) : (
-          <div className="space-y-4">
+  return (
+    <KitchenLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Completed Orders & Delivery Status</h1>
+          <p className="text-muted-foreground">Manage rider assignments and track deliveries</p>
+        </div>
+
+        {doneOrders.length > 0 ? (
+          <div className="grid gap-4">
             {doneOrders.map((order) => (
-              <Card key={order.id} className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg">{order.id}</h3>
-                      <Badge variant={order.orderType === 'walk-in' ? 'secondary' : 'default'}>
-                        {order.orderType === 'walk-in' ? 'WALK-IN' : 'ONLINE'}
+              <Card key={order.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-bold text-lg">{order.id}</h3>
+                      <Badge variant={order.orderType === "walk-in" ? "default" : "secondary"}>
+                        {order.orderType}
                       </Badge>
+                      {order.deliveryStatus && getDeliveryStatusBadge(order.deliveryStatus)}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {order.customer.name} • {order.customer.phone}
-                    </p>
-                    {order.customer.address && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        📍 {order.customer.address}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span>{order.customer?.name || "N/A"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{order.customer?.phone || "N/A"}</span>
+                      </div>
+                      {order.customer?.address && (
+                        <div className="flex items-center gap-2 md:col-span-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{order.customer.address}</span>
+                        </div>
+                      )}
+                      {order.assignedDriver && (
+                        <div className="flex items-center gap-2 md:col-span-2">
+                          <Bike className="h-4 w-4 text-muted-foreground" />
+                          <span>Driver: <strong>{order.assignedDriver}</strong></span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t">
+                      <p className="text-sm font-medium mb-1">Items:</p>
+                      {order.items?.map((item: any, idx: number) => (
+                        <p key={idx} className="text-sm text-muted-foreground ml-2">
+                          {item.quantity}x {item.name}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="ml-4 flex flex-col items-end gap-2">
+                    <div className="text-right">
+                      <p className="font-bold text-xl">₵{order.total.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(order.timestamp).toLocaleString()}
                       </p>
+                    </div>
+                    {!order.assignedDriver && (
+                      <Button size="sm" onClick={() => handleAssignDriver(order)}>
+                        <Bike className="h-4 w-4 mr-2" />
+                        Assign to Rider
+                      </Button>
                     )}
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">₵{order.total.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(order.timestamp).toLocaleString()}
-                    </p>
-                  </div>
                 </div>
-
-                <div className="space-y-2 mb-4">
-                  {order.items.map((item: any, idx: number) => (
-                    <div key={idx} className="flex justify-between text-sm">
-                      <span>{item.quantity}x {item.name}</span>
-                      <span>₵{(item.price * item.quantity).toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {order.assignedDriver ? (
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Bike className="h-4 w-4" />
-                      <span className="text-sm">
-                        Assigned to: <strong>{order.assignedDriver}</strong>
-                      </span>
-                      <Badge variant="outline" className="ml-auto">
-                        {order.deliveryStatus || 'Out for Delivery'}
-                      </Badge>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() => handleAssignDriver(order)}
-                    className="w-full gap-2"
-                  >
-                    <Bike className="h-4 w-4" />
-                    Assign to Rider
-                  </Button>
-                )}
               </Card>
             ))}
           </div>
+        ) : (
+          <Card className="p-12 text-center text-muted-foreground">
+            <p className="text-lg">No completed orders yet</p>
+          </Card>
         )}
-      </div>
 
-      {/* Driver Assignment Dialog */}
-      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Rider</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="font-semibold mb-2">Order: {selectedOrder?.id}</p>
-              <p className="text-sm text-muted-foreground">
-                {selectedOrder?.customer?.name} • ₵{selectedOrder?.total?.toFixed(2)}
-              </p>
-            </div>
+        {/* Assign Driver Dialog */}
+        <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assign Rider to Order {selectedOrder?.id}</DialogTitle>
+            </DialogHeader>
 
-            <div className="space-y-3">
-              <Button
-                onClick={assignToFirstDriver}
-                className="w-full gap-2"
-                size="lg"
-              >
-                <Bike className="h-5 w-5" />
-                Auto-Assign to First Available Rider
-              </Button>
+            <div className="space-y-4">
+              {onlineDrivers.length > 0 ? (
+                <>
+                  <Button onClick={assignToFirstDriver} className="w-full">
+                    Auto-Assign to First Available Rider ({onlineDrivers[0]?.name})
+                  </Button>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or select manually
-                  </span>
-                </div>
-              </div>
-
-              {onlineDrivers.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4">
-                  No drivers currently online
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {onlineDrivers.map((driver) => (
-                    <div
-                      key={driver.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent cursor-pointer"
-                      onClick={() => handleManualAssign(driver.id, driver.name)}
-                    >
-                      <div>
-                        <p className="font-medium">{driver.name}</p>
-                        <p className="text-xs text-muted-foreground">{driver.phone}</p>
-                      </div>
-                      <Button size="sm" variant="outline">
-                        Assign
-                      </Button>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
                     </div>
-                  ))}
-                </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or select manually</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {onlineDrivers.map((driver) => (
+                      <Card key={driver.id} className="p-3 hover:bg-muted/50 cursor-pointer" onClick={() => handleManualAssign(driver.id, driver.name)}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Bike className="h-5 w-5" />
+                            <div>
+                              <p className="font-medium">{driver.name}</p>
+                              <p className="text-xs text-muted-foreground">{driver.phone}</p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-green-600 border-green-600">
+                            Online
+                          </Badge>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No riders currently online</p>
               )}
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </KitchenLayout>
   );
 };
 

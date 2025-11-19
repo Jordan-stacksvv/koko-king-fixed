@@ -1,0 +1,213 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { 
+  ShoppingCart, 
+  ClipboardList, 
+  Clock, 
+  CheckCircle2, 
+  Truck, 
+  TrendingUp,
+  Plus,
+  ChefHat,
+  Settings,
+  BarChart3,
+  DollarSign
+} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AddOrderForm } from "@/components/kitchen/AddOrderForm";
+
+export default function KitchenDashboard() {
+  const navigate = useNavigate();
+  const [showAddOrder, setShowAddOrder] = useState(false);
+  const [stats, setStats] = useState({
+    todaySales: 0,
+    totalOrders: 0,
+    ordersInQueue: 0,
+    ordersPreparing: 0,
+    ongoingDeliveries: 0,
+    completedOrders: 0
+  });
+
+  // Calculate live stats from localStorage (will be replaced by Convex)
+  useEffect(() => {
+    const calculateStats = () => {
+      const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const today = new Date().toDateString();
+      
+      const todayOrders = orders.filter((order: any) => 
+        new Date(order.timestamp).toDateString() === today
+      );
+
+      const todaySales = todayOrders.reduce((sum: number, order: any) => sum + order.total, 0);
+      const totalOrders = todayOrders.length;
+      const ordersInQueue = orders.filter((o: any) => o.status === "pending").length;
+      const ordersPreparing = orders.filter((o: any) => o.status === "preparing").length;
+      const ongoingDeliveries = orders.filter((o: any) => 
+        o.deliveryStatus === "assigned" || 
+        o.deliveryStatus === "accepted" || 
+        o.deliveryStatus === "on-route"
+      ).length;
+      const completedOrders = orders.filter((o: any) => o.status === "completed").length;
+
+      setStats({
+        todaySales,
+        totalOrders,
+        ordersInQueue,
+        ordersPreparing,
+        ongoingDeliveries,
+        completedOrders
+      });
+    };
+
+    calculateStats();
+    const interval = setInterval(calculateStats, 3000); // Update every 3 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const statCards = [
+    {
+      title: "Today's Sales",
+      value: `₵${stats.todaySales.toFixed(2)}`,
+      icon: DollarSign,
+      color: "text-green-600",
+      bgColor: "bg-green-50"
+    },
+    {
+      title: "Total Orders Today",
+      value: stats.totalOrders,
+      icon: ShoppingCart,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50"
+    },
+    {
+      title: "Orders in Queue",
+      value: stats.ordersInQueue,
+      icon: ClipboardList,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50"
+    },
+    {
+      title: "Orders Preparing",
+      value: stats.ordersPreparing,
+      icon: Clock,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50"
+    },
+    {
+      title: "Ongoing Deliveries",
+      value: stats.ongoingDeliveries,
+      icon: Truck,
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-50"
+    },
+    {
+      title: "Completed Orders",
+      value: stats.completedOrders,
+      icon: CheckCircle2,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50"
+    }
+  ];
+
+  const actionButtons = [
+    {
+      title: "Make Sales",
+      description: "Create walk-in customer orders (POS Mode)",
+      icon: Plus,
+      color: "bg-primary hover:bg-primary/90",
+      onClick: () => setShowAddOrder(true)
+    },
+    {
+      title: "Kitchen Workflow",
+      description: "View and manage order pipeline",
+      icon: ChefHat,
+      color: "bg-orange-500 hover:bg-orange-600",
+      onClick: () => navigate("/kitchen/orders")
+    },
+    {
+      title: "Rider Assignment",
+      description: "Configure delivery settings and auto-assign",
+      icon: Truck,
+      color: "bg-blue-500 hover:bg-blue-600",
+      onClick: () => navigate("/kitchen/settings")
+    },
+    {
+      title: "Menu & Items",
+      description: "Manage meals, prices, and availability",
+      icon: ClipboardList,
+      color: "bg-purple-500 hover:bg-purple-600",
+      onClick: () => navigate("/manager/menu")
+    },
+    {
+      title: "Sales Reports",
+      description: "View daily, weekly sales and order history",
+      icon: BarChart3,
+      color: "bg-emerald-500 hover:bg-emerald-600",
+      onClick: () => navigate("/kitchen/reports")
+    }
+  ];
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Kitchen Dashboard</h1>
+        <p className="text-muted-foreground mt-1">
+          Monitor operations and manage orders in real-time
+        </p>
+      </div>
+
+      {/* Live Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {statCards.map((stat, index) => (
+          <Card key={index} className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </CardTitle>
+              <div className={`${stat.bgColor} p-2 rounded-lg`}>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                Live updates
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Action Buttons */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {actionButtons.map((action, index) => (
+            <Card key={index} className="hover:shadow-lg transition-all cursor-pointer group" onClick={action.onClick}>
+              <CardHeader>
+                <div className={`${action.color} text-white p-3 rounded-lg inline-flex w-fit mb-3 group-hover:scale-110 transition-transform`}>
+                  <action.icon className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-lg">{action.title}</CardTitle>
+                <CardDescription>{action.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Add Order Dialog */}
+      <Dialog open={showAddOrder} onOpenChange={setShowAddOrder}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Walk-in Order</DialogTitle>
+          </DialogHeader>
+          <AddOrderForm onClose={() => setShowAddOrder(false)} />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
