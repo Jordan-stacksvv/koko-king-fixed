@@ -6,6 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, TrendingUp, DollarSign, ShoppingBag } from "lucide-react";
 import { format } from "date-fns";
+import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 
 export default function KitchenReports() {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -55,14 +56,15 @@ export default function KitchenReports() {
   }, [date]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sales Reports</h1>
-          <p className="text-muted-foreground mt-1">
-            View sales performance and order history
-          </p>
-        </div>
+    <KitchenLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Sales Reports</h1>
+            <p className="text-muted-foreground mt-1">
+              View sales performance and order history
+            </p>
+          </div>
         
         <Popover>
           <PopoverTrigger asChild>
@@ -226,6 +228,7 @@ export default function KitchenReports() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </KitchenLayout>
   );
 }
