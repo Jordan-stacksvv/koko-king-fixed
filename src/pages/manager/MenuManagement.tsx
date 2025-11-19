@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { menuItems as initialMenuItems } from "@/data/menuItems";
 import { toast } from "sonner";
 
 const MenuManagement = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [menuItems, setMenuItems] = useState(initialMenuItems);
@@ -57,6 +59,10 @@ const MenuManagement = () => {
             <h1 className="text-3xl font-bold">Menu Management</h1>
             <p className="text-muted-foreground">View and manage menu items ({menuItems.length} total)</p>
           </div>
+          <Button onClick={() => navigate("/admin/extras")} variant="outline">
+            <Plus className="h-4 w-4 mr-2" />
+            Menu Extras
+          </Button>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4">

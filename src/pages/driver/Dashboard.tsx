@@ -76,6 +76,9 @@ const DriverDashboard = () => {
       localStorage.setItem("driverQueue", JSON.stringify(updated));
       setIsOnline(false);
       toast.success("You are now offline");
+
+      // CONVEX TODO: Update driver status
+      // await mutation(api.drivers.goOffline, { driverId: driver.id });
     } else {
       // Go online - add to queue
       const newEntry = {
@@ -83,12 +86,19 @@ const DriverDashboard = () => {
         name: driver.fullName || driver.phone,
         phone: driver.phone,
         status: "online",
-        joinedAt: new Date().toISOString()
+        joinedAt: new Date().toISOString(),
+        currentOrder: null
       };
       queue.push(newEntry);
       localStorage.setItem("driverQueue", JSON.stringify(queue));
       setIsOnline(true);
-      toast.success("You are now online and in queue");
+      toast.success("You are now online and in queue! 🚴");
+
+      // CONVEX TODO: Update driver status & notify system
+      // await mutation(api.drivers.goOnline, { 
+      //   driverId: driver.id,
+      //   location: { lat: 0, lng: 0 } // Use real geolocation
+      // });
     }
   };
 

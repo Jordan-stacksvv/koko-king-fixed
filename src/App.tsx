@@ -38,6 +38,7 @@ import AdminPayments from "./pages/admin/Payments";
 
 // Kitchen Display
 import KitchenDisplay from "./pages/kitchen/Display";
+import KitchenDone from "./pages/kitchen/Done";
 
 // Driver Routes
 import DriverLogin from "./pages/driver/Login";
@@ -71,6 +72,7 @@ const App = () => (
           <Route path="/kitchen/login" element={<KitchenLogin />} />
           <Route path="/kitchen/orders" element={<KitchenOrders />} />
           <Route path="/kitchen/display" element={<KitchenDisplay />} />
+          <Route path="/kitchen/done" element={<KitchenDone />} />
           
           {/* Manager Routes */}
           <Route path="/manager/login" element={<ManagerLogin />} />
