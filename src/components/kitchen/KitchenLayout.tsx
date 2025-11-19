@@ -5,9 +5,7 @@ import {
   LayoutDashboard, 
   ShoppingBag, 
   Truck, 
-  ChefHat, 
   DollarSign, 
-  Settings, 
   LogOut 
 } from "lucide-react";
 import kokoKingLogo from "@/assets/koko-king-logo.png";
@@ -36,10 +34,9 @@ export const KitchenLayout = ({ children }: KitchenLayoutProps) => {
 
   const navItems = [
     { path: "/kitchen/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { path: "/kitchen/orders", icon: ShoppingBag, label: "Kitchen Flow" },
+    { path: "/kitchen/orders", icon: ShoppingBag, label: "Sales" },
+    { path: "/kitchen/settings", icon: Truck, label: "Rider Assignment" },
     { path: "/kitchen/reports", icon: DollarSign, label: "Reports" },
-    { path: "/manager/menu", icon: ChefHat, label: "Menu" },
-    { path: "/kitchen/settings", icon: Settings, label: "Settings" },
   ];
 
   return (
