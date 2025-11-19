@@ -137,19 +137,10 @@ TOTAL: ₵${order.total.toFixed(2)}
               <p className="text-sm text-muted-foreground">Active Orders: {orders.length}</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/kitchen/display")}>
-              <Monitor className="h-4 w-4 mr-2" />
-              Display
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/kitchen/done")}>
-              Done Orders
-            </Button>
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
+          <Button onClick={handleLogout} variant="outline" size="sm">
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </header>
 
