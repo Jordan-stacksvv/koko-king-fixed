@@ -6,7 +6,6 @@ import { MenuItem } from "@/components/MenuItem";
 import { FloatingCart } from "@/components/FloatingCart";
 import { Footer } from "@/components/Footer";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
-import { DemoAccounts } from "@/components/DemoAccounts";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { categories, menuItems, restaurants } from "@/data/menuItems";
@@ -97,11 +96,6 @@ const Index = () => {
 
       <section id="menu-section" className="py-8 bg-background">
         <div className="container mx-auto px-4">
-          {/* Demo Accounts Section */}
-          <div className="mb-8">
-            <DemoAccounts />
-          </div>
-
           <div className="grid lg:grid-cols-[280px_1fr] gap-8">
             <div className="hidden lg:block">
               <div className="sticky top-20">
