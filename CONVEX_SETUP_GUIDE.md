@@ -12,9 +12,10 @@ This guide provides step-by-step instructions for integrating Convex backend int
 2. [Convex Setup](#convex-setup)
 3. [Schema Design](#schema-design)
 4. [Functions Implementation](#functions-implementation)
-5. [Frontend Integration](#frontend-integration)
-6. [Migration Steps](#migration-steps)
-7. [Testing Checklist](#testing-checklist)
+5. [Kitchen Dashboard Functions](#kitchen-dashboard-functions)
+6. [Frontend Integration](#frontend-integration)
+7. [Migration Steps](#migration-steps)
+8. [Testing Checklist](#testing-checklist)
 
 ---
 

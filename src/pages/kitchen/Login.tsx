@@ -20,7 +20,7 @@ const KitchenLogin = () => {
     if (email === "kitchen" && password === "kitchen123") {
       localStorage.setItem("kitchenAuth", "true");
       toast.success("Kitchen access granted!");
-      navigate("/kitchen/orders");
+      navigate("/kitchen/dashboard");
     } else {
       toast.error("Invalid credentials");
     }
