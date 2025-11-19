@@ -16,13 +16,13 @@ const Login = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Demo credentials: manager@kokoking.com / admin123
-    if (email === "manager@kokoking.com" && password === "admin123") {
+    // Demo credentials: manager@branch1.com / manager123
+    if (email === "manager@branch1.com" && password === "manager123") {
       localStorage.setItem("managerAuth", "true");
       toast.success("Manager access granted!");
       navigate("/manager/dashboard");
     } else {
-      toast.error("Invalid credentials. Try: manager@kokoking.com / admin123");
+      toast.error("Invalid credentials");
     }
   };
 
@@ -53,7 +53,7 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="manager@kokoking.com"
+                placeholder="manager@branch1.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -77,9 +77,9 @@ const Login = () => {
             </Button>
 
             <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
-              <p className="font-semibold mb-1">Demo Credentials:</p>
-              <p>Email: manager@kokoking.com</p>
-              <p>Password: admin123</p>
+              <p className="font-semibold mb-1 text-muted-foreground">Demo Credentials:</p>
+              <p className="font-mono">manager@branch1.com</p>
+              <p className="font-mono">manager123</p>
             </div>
           </form>
         </CardContent>

@@ -15,7 +15,7 @@ const AdminLogin = () => {
     e.preventDefault();
     
     // Simple admin check - in production, use proper authentication
-    if (credentials.username === "admin" && credentials.password === "admin123") {
+    if (credentials.username === "admin@kokoking.com" && credentials.password === "admin123") {
       localStorage.setItem("adminAuth", "true");
       toast.success("Welcome, Admin!");
       navigate("/admin/dashboard");
@@ -46,7 +46,7 @@ const AdminLogin = () => {
                 type="text"
                 value={credentials.username}
                 onChange={(e) => setCredentials({...credentials, username: e.target.value})}
-                placeholder="admin"
+                placeholder="admin@kokoking.com"
                 required
               />
             </div>
@@ -63,6 +63,12 @@ const AdminLogin = () => {
             <Button type="submit" className="w-full">
               Sign In as Admin
             </Button>
+
+            <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
+              <p className="font-semibold mb-1 text-muted-foreground">Demo Credentials:</p>
+              <p className="font-mono">admin@kokoking.com</p>
+              <p className="font-mono">admin123</p>
+            </div>
           </form>
         </CardContent>
       </Card>

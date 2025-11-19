@@ -111,6 +111,12 @@ const DriverLogin = () => {
                   <p className="text-xs text-muted-foreground">Contact admin for system passkey</p>
                 </div>
                 <Button type="submit" className="w-full">Login</Button>
+
+                <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
+                  <p className="font-semibold mb-1 text-muted-foreground">Demo Credentials:</p>
+                  <p className="font-mono">Phone: driver@koko.com</p>
+                  <p className="font-mono">Passkey: driver123</p>
+                </div>
               </form>
             </TabsContent>
             

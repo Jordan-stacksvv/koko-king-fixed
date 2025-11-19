@@ -16,13 +16,13 @@ const KitchenLogin = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Demo credentials: kitchen@kokoking.com / demo123
-    if (email === "kitchen@kokoking.com" && password === "demo123") {
+    // Demo credentials: kitchen / kitchen123
+    if (email === "kitchen" && password === "kitchen123") {
       localStorage.setItem("kitchenAuth", "true");
       toast.success("Kitchen access granted!");
       navigate("/kitchen/orders");
     } else {
-      toast.error("Invalid credentials. Try: kitchen@kokoking.com / demo123");
+      toast.error("Invalid credentials");
     }
   };
 
@@ -49,11 +49,11 @@ const KitchenLogin = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Username</Label>
               <Input
                 id="email"
-                type="email"
-                placeholder="kitchen@kokoking.com"
+                type="text"
+                placeholder="kitchen"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -73,9 +73,12 @@ const KitchenLogin = () => {
             <Button type="submit" className="w-full">
               Login to Kitchen
             </Button>
-            <p className="text-xs text-center text-muted-foreground">
-              Demo: kitchen@kokoking.com / demo123
-            </p>
+
+            <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
+              <p className="font-semibold mb-1 text-muted-foreground">Demo Credentials:</p>
+              <p className="font-mono">kitchen</p>
+              <p className="font-mono">kitchen123</p>
+            </div>
           </form>
         </CardContent>
       </Card>
