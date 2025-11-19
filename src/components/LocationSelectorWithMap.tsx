@@ -1,5 +1,5 @@
 import { Restaurant } from "@/data/menuItems";
-import { MapPin, Edit2, Navigation } from "lucide-react";
+import { MapPin, Edit2, Navigation, Locate } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAccurateLocation, findNearestRestaurant } from "@/lib/geolocation";
 import { toast } from "sonner";
 
@@ -26,6 +27,8 @@ export const LocationSelectorWithMap = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("Your current location");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [mapCenter, setMapCenter] = useState({ lat: 5.6037, lng: -0.1870 }); // Accra default
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const handleUseCurrentLocation = async () => {
     setIsDetectingLocation(true);
@@ -98,10 +101,18 @@ export const LocationSelectorWithMap = ({
       </section>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Select Restaurant & Delivery Location</DialogTitle>
           </DialogHeader>
+          
+          <Tabs defaultValue="select" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="select">Select Location</TabsTrigger>
+              <TabsTrigger value="map">Map View</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="select" className="space-y-6">
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
@@ -161,11 +172,15 @@ export const LocationSelectorWithMap = ({
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">Delivery Address</label>
-                  <Input
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    placeholder="Enter delivery address"
-                  />
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      placeholder="Enter delivery address"
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -190,7 +205,85 @@ export const LocationSelectorWithMap = ({
               Confirm Selection
             </Button>
           </div>
-        </DialogContent>
+        </TabsContent>
+        
+        <TabsContent value="map" className="space-y-4">
+          <div className="space-y-4">
+            <div className="relative">
+              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+              <Input
+                placeholder="Search location or enter address"
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                className="w-full pl-10"
+              />
+            </div>
+            
+            <Button 
+              onClick={handleUseCurrentLocation} 
+              disabled={isDetectingLocation}
+              variant="outline"
+              className="w-full"
+            >
+              <Locate className="h-4 w-4 mr-2" />
+              {isDetectingLocation ? "Detecting..." : "Use My Current Location"}
+            </Button>
+            
+            {/* Interactive Map Display */}
+            <div className="border rounded-lg overflow-hidden bg-muted">
+              <div className="aspect-[16/9] relative">
+                <iframe
+                  src={`https://www.google.com/maps?q=${mapCenter.lat},${mapCenter.lng}&output=embed&z=13`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Delivery Location Map"
+                  className="w-full h-full"
+                />
+              </div>
+              <div className="p-4 bg-background">
+                <h4 className="font-semibold mb-2">Selected Location</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {deliveryAddress || "Click on the map or use current location"}
+                </p>
+                
+                <h4 className="font-semibold mb-2 mt-4">Nearby Restaurants</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {restaurants.map((restaurant) => (
+                    <button
+                      key={restaurant.id}
+                      onClick={() => {
+                        onRestaurantChange(restaurant);
+                        setMapCenter({ lat: restaurant.coordinates.lat, lng: restaurant.coordinates.lng });
+                      }}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                        selectedRestaurant.id === restaurant.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold">{restaurant.name}</p>
+                          <p className="text-xs text-muted-foreground">{restaurant.address}</p>
+                        </div>
+                        <Navigation className="h-4 w-4 text-primary" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <Button onClick={() => setIsDialogOpen(false)} className="w-full">
+              Confirm Location
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
+      </DialogContent>
       </Dialog>
     </>
   );
