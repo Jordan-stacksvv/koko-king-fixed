@@ -1,6 +1,29 @@
 # Koko King - Convex Integration Update
 
-This document extends the existing CONVEX_SETUP_GUIDE.md with additional schema, functions, and implementation details for the complete driver delivery system, payments, and notifications.
+This document extends the existing CONVEX_SETUP_GUIDE.md with additional schema, functions, and implementation details for the complete driver delivery system, payments, notifications, and real-time updates.
+
+## 🚨 Critical Implementation Notes
+
+### Environment Variables Required
+```env
+# Add to Convex environment (Dashboard → Settings → Environment Variables)
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxx
+PAYSTACK_SECRET_KEY=sk_live_xxxxxxxxxxxx
+PAYSTACK_PUBLIC_KEY=pk_live_xxxxxxxxxxxx
+GOOGLE_MAPS_API_KEY=AIzaSyXXXXXXXXXXXXXX
+```
+
+### VS Code Setup Issues
+- If Convex commands not working in VS Code terminal, use external terminal
+- Run `npx convex dev` in project root (not in subdirectory)
+- Ensure Convex CLI installed globally: `npm install -g convex`
+
+### Webhook Endpoints
+- Paystack webhooks: `https://your-app.convex.site/paystack-webhook`
+- Configure in Paystack Dashboard → Settings → Webhooks
+- Verify webhook signature in edge function for security
+
+---
 
 ## Additional Convex Schema Tables
 
