@@ -401,42 +401,26 @@ TOTAL: ₵${order.total.toFixed(2)}
 
           {/* Done Orders Tab */}
           <TabsContent value="done" className="mt-0">
-            {completedOrders.length === 0 ? (
-              <div className="text-center py-20 text-muted-foreground">No completed orders</div>
-            ) : (
-              <div className="space-y-2">
-                {completedOrders.map((order) => (
-                  <div 
-                    key={order.id} 
-                    className="flex items-center justify-between border rounded-lg p-4 bg-card cursor-pointer hover:bg-accent"
-                    onClick={() => setSelectedOrderForReceipt(order)}
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold">{order.id}</p>
-                          <span className={`text-xs px-2 py-1 rounded font-semibold ${
-                            order.orderType === "walk-in" ? "bg-red-500 text-white" : "bg-blue-500 text-white"
-                          }`}>
-                            {order.orderType === "walk-in" ? "WALK-IN" : "ONLINE"}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{order.customer.name}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(order.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">₵{(order.total || 0).toFixed(2)}</p>
-                      <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
-                        Completed
-                      </span>
-                    </div>
-                  </div>
-                ))}
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="bg-card p-12 rounded-lg border text-center max-w-md">
+                <Monitor className="h-16 w-16 mx-auto mb-4 text-primary" />
+                <h2 className="text-2xl font-bold mb-2">Delivery Management</h2>
+                <p className="text-muted-foreground mb-6">
+                  View and manage all delivery statuses, assign riders, and track orders in real-time
+                </p>
+                <Button 
+                  size="lg" 
+                  className="w-full gap-2"
+                  onClick={() => {
+                    // TODO: Navigate to delivery status page when implemented
+                    alert("Delivery Status page - To be implemented with Convex");
+                  }}
+                >
+                  <Monitor className="h-5 w-5" />
+                  See Delivery Status
+                </Button>
               </div>
-            )}
+            </div>
           </TabsContent>
         </Tabs>
       </main>
