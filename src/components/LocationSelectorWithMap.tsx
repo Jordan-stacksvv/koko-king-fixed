@@ -1,6 +1,6 @@
 import { Restaurant } from "@/data/menuItems";
-import { MapPin, Edit2, Navigation, Locate } from "lucide-react";
-import { useState, useEffect } from "react";
+import { MapPin, Edit2, Navigation } from "lucide-react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAccurateLocation, findNearestRestaurant } from "@/lib/geolocation";
 import { toast } from "sonner";
+import { MapLocationPicker } from "./MapLocationPicker";
 
 interface LocationSelectorProps {
   selectedRestaurant: Restaurant;
@@ -27,8 +28,7 @@ export const LocationSelectorWithMap = ({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("Your current location");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
-  const [mapCenter, setMapCenter] = useState({ lat: 5.6037, lng: -0.1870 }); // Accra default
-  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [defaultTab, setDefaultTab] = useState("select");
 
   const handleUseCurrentLocation = async () => {
@@ -55,6 +55,21 @@ export const LocationSelectorWithMap = ({
       setIsDetectingLocation(false);
       toast.dismiss();
     }
+  };
+
+  const handleLocationSelect = (location: {
+    address: string;
+    lat: number;
+    lng: number;
+    nearestRestaurant: Restaurant;
+  }) => {
+    setDeliveryAddress(location.address);
+    setDeliveryCoords({ lat: location.lat, lng: location.lng });
+    onRestaurantChange(location.nearestRestaurant);
+    localStorage.setItem("selectedRestaurant", JSON.stringify(location.nearestRestaurant));
+    localStorage.setItem("deliveryAddress", location.address);
+    localStorage.setItem("deliveryCoords", JSON.stringify({ lat: location.lat, lng: location.lng }));
+    setIsDialogOpen(false);
   };
 
   const getDirections = (restaurant: Restaurant) => {
@@ -215,79 +230,11 @@ export const LocationSelectorWithMap = ({
         </TabsContent>
         
         <TabsContent value="map" className="space-y-4">
-          <div className="space-y-4">
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
-              <Input
-                placeholder="Search location or enter address"
-                value={deliveryAddress}
-                onChange={(e) => setDeliveryAddress(e.target.value)}
-                className="w-full pl-10"
-              />
-            </div>
-            
-            <Button 
-              onClick={handleUseCurrentLocation} 
-              disabled={isDetectingLocation}
-              variant="outline"
-              className="w-full"
-            >
-              <Locate className="h-4 w-4 mr-2" />
-              {isDetectingLocation ? "Detecting..." : "Use My Current Location"}
-            </Button>
-            
-            {/* Interactive Map Display */}
-            <div className="border rounded-lg overflow-hidden bg-muted">
-              <div className="aspect-[16/9] relative">
-                <iframe
-                  src={`https://www.google.com/maps?q=${mapCenter.lat},${mapCenter.lng}&output=embed&z=13`}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Delivery Location Map"
-                  className="w-full h-full"
-                />
-              </div>
-              <div className="p-4 bg-background">
-                <h4 className="font-semibold mb-2">Selected Location</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {deliveryAddress || "Click on the map or use current location"}
-                </p>
-                
-                <h4 className="font-semibold mb-2 mt-4">Nearby Restaurants</h4>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {restaurants.map((restaurant) => (
-                    <button
-                      key={restaurant.id}
-                      onClick={() => {
-                        onRestaurantChange(restaurant);
-                        setMapCenter({ lat: restaurant.coordinates.lat, lng: restaurant.coordinates.lng });
-                      }}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                        selectedRestaurant.id === restaurant.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold">{restaurant.name}</p>
-                          <p className="text-xs text-muted-foreground">{restaurant.address}</p>
-                        </div>
-                        <Navigation className="h-4 w-4 text-primary" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <Button onClick={() => setIsDialogOpen(false)} className="w-full">
-              Confirm Location
-            </Button>
-          </div>
+          <MapLocationPicker
+            onLocationSelect={handleLocationSelect}
+            restaurants={restaurants}
+            initialCenter={deliveryCoords || undefined}
+          />
         </TabsContent>
       </Tabs>
       </DialogContent>
