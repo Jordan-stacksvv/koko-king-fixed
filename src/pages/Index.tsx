@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { HeroBanner } from "@/components/HeroBanner";
 import { CategoryCarousel } from "@/components/CategoryCarousel";
-import { LocationSelector } from "@/components/LocationSelector";
+import { LocationSelectorWithMap } from "@/components/LocationSelectorWithMap";
 import { MenuItem } from "@/components/MenuItem";
 import { FloatingCart } from "@/components/FloatingCart";
 import { Footer } from "@/components/Footer";
@@ -69,7 +69,7 @@ const Index = () => {
       <Navbar />
       <HeroBanner />
       
-      <LocationSelector 
+      <LocationSelectorWithMap 
         selectedRestaurant={selectedRestaurant}
         restaurants={restaurants}
         onRestaurantChange={setSelectedRestaurant}

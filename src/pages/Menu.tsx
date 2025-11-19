@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { MenuItem } from "@/components/MenuItem";
 import { FloatingCart } from "@/components/FloatingCart";
-import { LocationSelector } from "@/components/LocationSelector";
+import { LocationSelectorWithMap } from "@/components/LocationSelectorWithMap";
 import { menuItems, categories, restaurants } from "@/data/menuItems";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ const Menu = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <LocationSelector
+      <LocationSelectorWithMap
         selectedRestaurant={selectedRestaurant}
         restaurants={restaurants}
         onRestaurantChange={setSelectedRestaurant}
