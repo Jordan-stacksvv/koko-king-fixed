@@ -29,6 +29,7 @@ export const LocationSelectorWithMap = ({
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [mapCenter, setMapCenter] = useState({ lat: 5.6037, lng: -0.1870 }); // Accra default
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [defaultTab, setDefaultTab] = useState("select");
 
   const handleUseCurrentLocation = async () => {
     setIsDetectingLocation(true);
@@ -81,10 +82,16 @@ export const LocationSelectorWithMap = ({
                 <div className="font-semibold text-foreground text-xs sm:text-base truncate">{selectedRestaurant.name.toUpperCase()}</div>
               </button>
               <button 
-                onClick={() => setIsDialogOpen(true)}
+                onClick={() => {
+                  setDefaultTab("map");
+                  setIsDialogOpen(true);
+                }}
                 className="flex-1 min-w-0 text-left hover:bg-muted/50 rounded-lg p-2 transition-colors"
               >
-                <div className="text-xs sm:text-sm text-muted-foreground">To:</div>
+                <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  To:
+                </div>
                 <div className="font-semibold text-foreground text-xs sm:text-base truncate">{deliveryAddress}</div>
               </button>
               <Button
@@ -106,7 +113,7 @@ export const LocationSelectorWithMap = ({
             <DialogTitle>Select Restaurant & Delivery Location</DialogTitle>
           </DialogHeader>
           
-          <Tabs defaultValue="select" className="w-full">
+          <Tabs value={defaultTab} onValueChange={setDefaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="select">Select Location</TabsTrigger>
               <TabsTrigger value="map">Map View</TabsTrigger>
