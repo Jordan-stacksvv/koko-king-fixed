@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
-import { TrendingUp, Store, ShoppingCart, Package, BarChart, Settings, LogOut, Truck } from "lucide-react";
+import { TrendingUp, Store, ShoppingCart, Package, BarChart, Settings, LogOut, Truck, Users } from "lucide-react";
 import kokoKingLogo from "@/assets/koko-king-logo.png";
 
 export function AdminSidebar() {
@@ -19,6 +19,7 @@ export function AdminSidebar() {
     { path: "/admin/orders", label: "All Orders", icon: ShoppingCart },
     { path: "/admin/menu", label: "Menu Management", icon: Package },
     { path: "/admin/extras", label: "Menu Extras", icon: Settings },
+    { path: "/admin/drivers", label: "Driver Management", icon: Users },
     { path: "/admin/deliveries", label: "Deliveries", icon: Truck },
     { path: "/admin/payments", label: "Payments", icon: ShoppingCart },
     { path: "/admin/settings", label: "Settings", icon: Settings },
