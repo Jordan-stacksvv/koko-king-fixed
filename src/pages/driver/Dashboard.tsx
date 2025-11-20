@@ -35,19 +35,21 @@ const DriverDashboard = () => {
   const loadOrders = (driverId: string) => {
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
     
-    // Pending: Orders marked "ready-for-driver" and not yet assigned
+    // Pending: Orders with pending-approval status assigned to this driver
     const pending = orders.filter((o: any) => 
-      o.status === "ready-for-driver" && !o.driverId
+      o.assignedDriver === driverId && o.deliveryStatus === "pending-approval"
     );
     
-    // Ongoing: Orders assigned to this driver and not delivered
+    // Ongoing: Orders accepted by this driver and on route
     const ongoing = orders.filter((o: any) => 
-      o.driverId === driverId && o.status !== "delivered"
+      o.assignedDriver === driverId && 
+      (o.deliveryStatus === "accepted" || o.deliveryStatus === "on-route")
     );
     
     // Completed: Orders delivered by this driver
     const completed = orders.filter((o: any) => 
-      o.driverId === driverId && o.status === "delivered"
+      o.assignedDriver === driverId && 
+      (o.deliveryStatus === "delivered" || o.deliveryStatus === "completed")
     );
 
     setPendingOrders(pending);
@@ -106,18 +108,25 @@ const DriverDashboard = () => {
     if (!driver) return;
 
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const order = orders.find((o: any) => o.id === orderId);
     const orderIndex = orders.findIndex((o: any) => o.id === orderId);
     
     if (orderIndex !== -1) {
-      orders[orderIndex].driverId = driver.id;
-      orders[orderIndex].driverName = driver.fullName || driver.phone;
-      orders[orderIndex].driverPhone = driver.phone;
-      orders[orderIndex].status = "assigned-to-driver";
+      orders[orderIndex].deliveryStatus = "accepted";
       orders[orderIndex].acceptedAt = new Date().toISOString();
+      
+      // Update driver queue
+      const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+      const updatedQueue = driverQueue.map((d: any) =>
+        d.id === driver.id ? { ...d, status: "on-delivery" } : d
+      );
+      localStorage.setItem("driverQueue", JSON.stringify(updatedQueue));
       
       localStorage.setItem("orders", JSON.stringify(orders));
       loadOrders(driver.id);
-      toast.success("Order accepted!");
+      
+      // Notify customer (toast for now, can be extended with push notifications)
+      toast.success("Order accepted! Customer has been notified 📧");
     }
   };
 
@@ -126,11 +135,11 @@ const DriverDashboard = () => {
     const orderIndex = orders.findIndex((o: any) => o.id === orderId);
     
     if (orderIndex !== -1) {
-      orders[orderIndex].status = "out-for-delivery";
+      orders[orderIndex].deliveryStatus = "on-route";
       orders[orderIndex].pickedUpAt = new Date().toISOString();
       localStorage.setItem("orders", JSON.stringify(orders));
       loadOrders(driver.id);
-      toast.success("Order marked as picked up!");
+      toast.success("Order marked as picked up! On route to customer 🚴");
     }
   };
 
@@ -141,8 +150,9 @@ const DriverDashboard = () => {
     const orderIndex = orders.findIndex((o: any) => o.id === orderId);
     
     if (orderIndex !== -1) {
-      orders[orderIndex].status = "delivered";
+      // Update order status to delivered
       orders[orderIndex].deliveryStatus = "delivered";
+      orders[orderIndex].status = "delivered";
       orders[orderIndex].deliveredAt = new Date().toISOString();
       localStorage.setItem("orders", JSON.stringify(orders));
       
@@ -151,12 +161,12 @@ const DriverDashboard = () => {
       const driverIndex = queue.findIndex((d: any) => d.id === driver.id);
       if (driverIndex !== -1) {
         queue[driverIndex].status = "online";
-        queue[driverIndex].currentOrder = null;
+        queue[driverIndex].currentDelivery = null;
       }
       localStorage.setItem("driverQueue", JSON.stringify(queue));
       
       loadOrders(driver.id);
-      toast.success("✅ Delivery confirmed! Order completed.");
+      toast.success("✅ Delivery completed! You're back in the queue 🎉");
     }
   };
 

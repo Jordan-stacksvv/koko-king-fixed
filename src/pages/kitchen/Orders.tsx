@@ -124,14 +124,22 @@ export default function KitchenOrders() {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
-    // If pickup, mark as completed immediately
-    if (order.deliveryMethod === "pickup") {
-      handleStatusChange(orderId, "completed");
-      toast.success("Order completed - Ready for pickup!");
-    } else {
-      // If delivery, move to done (ready for rider assignment)
-      handleStatusChange(orderId, "done");
-      toast.success("Order ready for delivery assignment!");
+    // From preparing to ready status
+    if (order.status === "preparing") {
+      handleStatusChange(orderId, "ready");
+      toast.success("Order is ready!");
+      return;
+    }
+
+    // From ready to completed (walk-in/pickup) or done (delivery)
+    if (order.status === "ready") {
+      if (order.deliveryMethod === "pickup" || order.orderType === "walk-in") {
+        handleStatusChange(orderId, "completed");
+        toast.success("Order completed - Ready for pickup!");
+      } else {
+        handleStatusChange(orderId, "done");
+        toast.success("Order ready for delivery assignment!");
+      }
     }
   };
 
@@ -406,62 +414,128 @@ export default function KitchenOrders() {
                         <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
                       </div>
                     </div>
-                    <Button size="sm" onClick={() => handleCompleteOrder(order.id)} className="w-full">Mark Ready</Button>
+                    <Button size="sm" onClick={() => handleCompleteOrder(order.id)} className="w-full">Mark as Ready</Button>
                   </Card>
                 ))
               )}
             </CardContent>
           </Card>
 
-          {/* Ready Orders - Split by Delivery/Pickup */}
+          {/* Ready Orders */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Ready</span>
-                <Badge variant="secondary">{getOrdersByStatus("done").length + getOrdersByStatus("completed").length}</Badge>
+                <Badge variant="secondary">{getOrdersByStatus("ready").length}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(getOrdersByStatus("done").length + getOrdersByStatus("completed").length) === 0 ? (
+              {getOrdersByStatus("ready").length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">No ready orders</p>
               ) : (
-                <>
-                  {getOrdersByStatus("done").map((order) => (
-                    <Card key={order.id} className="p-3 space-y-2 border-green-500">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-bold">#{order.id.slice(0, 8)}</p>
-                          <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
-                          <p className="text-sm font-bold mt-1">₵{order.total.toFixed(2)}</p>
-                        </div>
-                        <Badge variant="outline" className="bg-green-500/10">Delivery</Badge>
+                getOrdersByStatus("ready").map((order) => (
+                  <Card key={order.id} className="p-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-bold">#{order.id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer?.name || order.customerName}</p>
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => printReceipt(order)} className="w-full">
-                        <Printer className="mr-2 h-4 w-4" />
-                        Print Receipt
+                      <Badge>{order.orderType}</Badge>
+                    </div>
+                    <div className="space-y-1 mb-3">
+                      {order.items?.map((item: any, idx: number) => (
+                        <p key={idx} className="text-xs">{item.quantity}x {item.name}</p>
+                      ))}
+                    </div>
+                    {/* Show Completed button for walk-in/pickup, otherwise move to done for delivery */}
+                    {(order.orderType === "walk-in" || order.deliveryMethod === "pickup") ? (
+                      <Button
+                        onClick={() => handleCompleteOrder(order.id)}
+                        className="w-full"
+                        size="sm"
+                      >
+                        Mark as Completed
                       </Button>
-                      <Button size="sm" variant="default" className="w-full" onClick={() => window.location.href = "/kitchen/done"}>
-                        Assign to Driver
+                    ) : (
+                      <Button
+                        onClick={() => handleCompleteOrder(order.id)}
+                        className="w-full"
+                        size="sm"
+                      >
+                        Ready for Delivery
                       </Button>
-                    </Card>
-                  ))}
-                  {getOrdersByStatus("completed").map((order) => (
-                    <Card key={order.id} className="p-3 space-y-2 border-blue-500">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-bold">#{order.id.slice(0, 8)}</p>
-                          <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
-                          <p className="text-sm font-bold mt-1">₵{order.total.toFixed(2)}</p>
-                        </div>
-                        <Badge variant="outline" className="bg-blue-500/10">Pickup</Badge>
+                    )}
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Done Orders (For Delivery Assignment) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>For Delivery</span>
+                <Badge variant="secondary">{getOrdersByStatus("done").length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {getOrdersByStatus("done").length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No orders for delivery</p>
+              ) : (
+                getOrdersByStatus("done").map((order) => (
+                  <Card key={order.id} className="p-3 space-y-2 border-green-500">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold">#{order.id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer?.name}</p>
+                        <p className="text-sm font-bold mt-1">₵{order.total.toFixed(2)}</p>
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => printReceipt(order)} className="w-full">
-                        <Printer className="mr-2 h-4 w-4" />
-                        Print Receipt
-                      </Button>
-                    </Card>
-                  ))}
-                </>
+                      <Badge variant="outline" className="bg-green-500/10">Delivery</Badge>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => printReceipt(order)} className="w-full">
+                      <Printer className="mr-2 h-4 w-4" />
+                      Print Receipt
+                    </Button>
+                    <Button size="sm" variant="default" className="w-full" onClick={() => window.location.href = "/kitchen/done"}>
+                      Assign to Driver
+                    </Button>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Completed Orders (Pickup/Walk-in) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Completed</span>
+                <Badge variant="secondary">{getOrdersByStatus("completed").length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {getOrdersByStatus("completed").length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No completed orders</p>
+              ) : (
+                getOrdersByStatus("completed").map((order) => (
+                  <Card key={order.id} className="p-3 space-y-2 border-blue-500">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold">#{order.id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer?.name || order.customerName}</p>
+                        <p className="text-sm font-bold mt-1">₵{order.total.toFixed(2)}</p>
+                      </div>
+                      <Badge variant="outline" className="bg-blue-500/10">
+                        {order.orderType === "walk-in" ? "Walk-in" : "Pickup"}
+                      </Badge>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => printReceipt(order)} className="w-full">
+                      <Printer className="mr-2 h-4 w-4" />
+                      Print Receipt
+                    </Button>
+                  </Card>
+                ))
               )}
             </CardContent>
           </Card>

@@ -106,7 +106,7 @@ export default function KitchenDone() {
             assignedDriver: driver.id,
             driverName: driver.name,
             driverPhone: driver.phone,
-            deliveryStatus: "assigned",
+            deliveryStatus: "pending-approval",
             assignedAt: new Date().toISOString(),
           }
         : order
@@ -123,11 +123,11 @@ export default function KitchenDone() {
     // Update driver status
     const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
     const updatedQueue = driverQueue.map((d: any) =>
-      d.id === driver.id ? { ...d, currentDelivery: selectedOrder.id } : d
+      d.id === driver.id ? { ...d, currentDelivery: selectedOrder.id, status: "assigned" } : d
     );
     localStorage.setItem("driverQueue", JSON.stringify(updatedQueue));
 
-    toast.success(`Order assigned to ${driver.name}`);
+    toast.success(`Assignment request sent to ${driver.name}. Waiting for acceptance...`);
     setShowAssignDialog(false);
     setSelectedOrder(null);
   };
@@ -150,6 +150,7 @@ export default function KitchenDone() {
 
   const getDeliveryStatusBadge = (status: string) => {
     const statusConfig = {
+      "pending-approval": { label: "Pending Approval", variant: "secondary" as const, icon: Clock },
       assigned: { label: "Assigned", variant: "secondary" as const, icon: Clock },
       accepted: { label: "Rider Accepted", variant: "default" as const, icon: CheckCircle2 },
       "on-route": { label: "On Route", variant: "default" as const, icon: Bike },
