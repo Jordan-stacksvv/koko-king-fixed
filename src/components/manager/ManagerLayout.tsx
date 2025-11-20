@@ -21,8 +21,21 @@ export const ManagerLayout = ({ children }: ManagerLayoutProps) => {
   const location = useLocation();
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem("managerAuth");
-    if (!isAuthenticated) {
+    const managerAuth = localStorage.getItem("managerAuth");
+    if (!managerAuth) {
+      navigate("/manager/login");
+      return;
+    }
+    
+    // Validate auth structure
+    try {
+      const auth = JSON.parse(managerAuth);
+      if (!auth.authenticated || !auth.branchId) {
+        localStorage.removeItem("managerAuth");
+        navigate("/manager/login");
+      }
+    } catch {
+      localStorage.removeItem("managerAuth");
       navigate("/manager/login");
     }
   }, [navigate]);

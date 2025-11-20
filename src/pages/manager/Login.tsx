@@ -1,24 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Settings } from "lucide-react";
 import kokoKingLogo from "@/assets/koko-king-logo.png";
+import { useBranchData } from "@/hooks/useBranchData";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { branches, loadBranches } = useBranchData();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("");
+
+  useEffect(() => {
+    loadBranches();
+  }, [loadBranches]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Demo credentials: manager@branch1.com / manager123
-    if (email === "manager@branch1.com" && password === "manager123") {
-      localStorage.setItem("managerAuth", "true");
+    if (!selectedBranch) {
+      toast.error("Please select a branch");
+      return;
+    }
+
+    // Demo credentials: manager@kokoking.com / manager123
+    if (email === "manager@kokoking.com" && password === "manager123") {
+      localStorage.setItem("managerAuth", JSON.stringify({
+        authenticated: true,
+        branchId: selectedBranch,
+        email: email
+      }));
       toast.success("Manager access granted!");
       navigate("/manager/dashboard");
     } else {
@@ -49,11 +66,27 @@ const Login = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="branch">Select Branch</Label>
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose your branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="manager@branch1.com"
+                placeholder="manager@kokoking.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -78,8 +111,9 @@ const Login = () => {
 
             <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
               <p className="font-semibold mb-1 text-muted-foreground">Demo Credentials:</p>
-              <p className="font-mono">manager@branch1.com</p>
+              <p className="font-mono">manager@kokoking.com</p>
               <p className="font-mono">manager123</p>
+              <p className="text-xs text-muted-foreground mt-1">Select any branch to login</p>
             </div>
           </form>
         </CardContent>

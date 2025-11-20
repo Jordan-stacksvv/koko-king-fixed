@@ -11,13 +11,14 @@ import { Plus, MapPin, Phone, Trash2, ArrowLeft, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { initializeBranches } from "@/data/defaultBranches";
+import { useBranchData } from "@/hooks/useBranchData";
 
 const Branches = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const selectedBranchId = searchParams.get("selected");
   
-  const [branches, setBranches] = useState<any[]>([]);
+  const { branches, addBranch, updateBranch, deleteBranch, loadBranches } = useBranchData();
   const [orders, setOrders] = useState<any[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -37,17 +38,11 @@ const Branches = () => {
     }
 
     initializeBranches();
+    loadBranches();
 
-    const saved = JSON.parse(localStorage.getItem("branches") || "[]");
     const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-    setBranches(saved);
     setOrders(allOrders);
-  }, [navigate]);
-
-  const saveBranches = (updatedBranches: any[]) => {
-    localStorage.setItem("branches", JSON.stringify(updatedBranches));
-    setBranches(updatedBranches);
-  };
+  }, [navigate, loadBranches]);
 
   const handleAddBranch = () => {
     if (!newBranch.name || !newBranch.location) {
@@ -55,13 +50,7 @@ const Branches = () => {
       return;
     }
 
-    const branch = {
-      id: `branch-${Date.now()}`,
-      ...newBranch,
-      createdAt: new Date().toISOString()
-    };
-
-    saveBranches([...branches, branch]);
+    addBranch(newBranch);
     toast.success(`${newBranch.name} added successfully!`);
     setNewBranch({ name: "", location: "", phone: "", manager: "", image: "" });
     setIsAddOpen(false);
@@ -75,10 +64,7 @@ const Branches = () => {
   const handleUpdateBranch = () => {
     if (!editingBranch) return;
 
-    const updated = branches.map(b => 
-      b.id === editingBranch.id ? editingBranch : b
-    );
-    saveBranches(updated);
+    updateBranch(editingBranch.id, editingBranch);
     toast.success("Branch updated!");
     setIsEditOpen(false);
     setEditingBranch(null);
@@ -102,8 +88,8 @@ const Branches = () => {
   };
 
   const handleRemove = (id: string, name: string) => {
-    if (confirm(`Remove ${name}?`)) {
-      saveBranches(branches.filter(b => b.id !== id));
+    if (confirm(`Remove ${name}? This will affect all data associated with this branch.`)) {
+      deleteBranch(id);
       toast.success(`${name} removed`);
     }
   };
