@@ -6,11 +6,11 @@ import { MenuItem } from "@/components/MenuItem";
 import { FloatingCart } from "@/components/FloatingCart";
 import { Footer } from "@/components/Footer";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { GeolocationConsent } from "@/components/GeolocationConsent";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { categories, menuItems, restaurants } from "@/data/menuItems";
 import { useState, useEffect } from "react";
-import { requestUserLocation, findNearestRestaurant } from "@/lib/geolocation";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -19,33 +19,12 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const detectLocation = async () => {
-      try {
-        // Check if we already have a saved location
-        const savedRestaurant = localStorage.getItem("selectedRestaurant");
-        if (savedRestaurant) {
-          const restaurant = JSON.parse(savedRestaurant);
-          setSelectedRestaurant(restaurant);
-          return;
-        }
-
-        // Auto-detect location on first visit
-        const position = await requestUserLocation();
-        const nearest = findNearestRestaurant(
-          position.coords.latitude,
-          position.coords.longitude,
-          restaurants
-        );
-        setSelectedRestaurant(nearest);
-        localStorage.setItem("selectedRestaurant", JSON.stringify(nearest));
-        toast.success(`Nearest location: ${nearest.name}`);
-      } catch (error) {
-        // Silently fail - user can manually select location
-        console.log("Location detection skipped");
-      }
-    };
-
-    detectLocation();
+    // Load saved restaurant if exists
+    const savedRestaurant = localStorage.getItem("selectedRestaurant");
+    if (savedRestaurant) {
+      const restaurant = JSON.parse(savedRestaurant);
+      setSelectedRestaurant(restaurant);
+    }
   }, []);
 
   const filteredItems = menuItems.filter((item) => {
@@ -66,6 +45,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <GeolocationConsent />
       <Navbar />
       <HeroBanner />
       

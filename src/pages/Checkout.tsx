@@ -87,6 +87,13 @@ const Checkout = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate delivery location for delivery orders
+    if (deliveryMethod === "delivery" && !deliveryCoords) {
+      toast.error("Please select your delivery location on the map");
+      setIsLocationDialogOpen(true);
+      return;
+    }
+
     const order = {
       id: `KK-${Math.floor(1000 + Math.random() * 9000)}`,
       items: cart,
@@ -173,13 +180,15 @@ const Checkout = () => {
                     <Label htmlFor="delivery" className="flex-1 cursor-pointer">
                       <div className="font-semibold">Delivery</div>
                       <div className="text-sm text-muted-foreground">
-                        {deliveryDistance > 0
-                          ? `Get it delivered to your doorstep (${deliveryDistance.toFixed(2)} km)`
-                          : "Get it delivered to your doorstep"}
+                        {deliveryCoords && deliveryDistance > 0
+                          ? `Get it delivered to your doorstep (${deliveryDistance.toFixed(1)} km)`
+                          : "Get it delivered to your doorstep - Select location for pricing"}
                       </div>
                     </Label>
                     <span className="font-semibold">
-                      {deliveryFee > 0 ? `₵${deliveryFee.toFixed(2)}` : "₵5.00"}
+                      {deliveryCoords && deliveryDistance > 0 
+                        ? `₵${deliveryFee.toFixed(2)}` 
+                        : "Select location"}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
@@ -231,6 +240,14 @@ const Checkout = () => {
                 {deliveryMethod === "delivery" && (
                   <div className="space-y-2">
                     <Label htmlFor="address">Delivery Address</Label>
+                    {!deliveryCoords && (
+                      <div className="mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="text-sm text-amber-800 flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Please select your delivery location using the map to calculate accurate delivery fees
+                        </p>
+                      </div>
+                    )}
                     <div className="relative">
                       <Textarea
                         id="address"
@@ -239,6 +256,7 @@ const Checkout = () => {
                         required
                         rows={3}
                         className="pr-12"
+                        placeholder="Click the map icon to select your location"
                       />
                       <Button
                         type="button"
@@ -250,9 +268,9 @@ const Checkout = () => {
                         <MapPin className="h-5 w-5 text-primary" />
                       </Button>
                     </div>
-                    {deliveryDistance > 0 && (
+                    {deliveryDistance > 0 && deliveryCoords && (
                       <p className="text-xs text-muted-foreground">
-                        Distance: {deliveryDistance.toFixed(2)} km from {selectedRestaurant.name}
+                        Distance: {deliveryDistance.toFixed(1)} km from {selectedRestaurant.name} • Fee: ₵{deliveryFee.toFixed(2)}
                       </p>
                     )}
                   </div>
