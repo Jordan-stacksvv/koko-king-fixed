@@ -17,6 +17,7 @@ import KitchenDashboard from "./pages/kitchen/Dashboard";
 import KitchenOrders from "./pages/kitchen/Orders";
 import KitchenReports from "./pages/kitchen/Reports";
 import KitchenSettings from "./pages/kitchen/Settings";
+import KitchenDeliveries from "./pages/kitchen/Deliveries";
 
 // Manager Routes
 import ManagerLogin from "./pages/manager/Login";
@@ -77,6 +78,7 @@ const App = () => (
           <Route path="/kitchen/orders" element={<KitchenOrders />} />
           <Route path="/kitchen/display" element={<KitchenDisplay />} />
           <Route path="/kitchen/done" element={<KitchenDone />} />
+          <Route path="/kitchen/deliveries" element={<KitchenDeliveries />} />
           <Route path="/kitchen/reports" element={<KitchenReports />} />
           <Route path="/kitchen/settings" element={<KitchenSettings />} />
           
