@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Clock, MapPin, Package, DollarSign, LogOut, CheckCircle, Navigation, Phone, TruckIcon, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import kokoKingLogo from "@/assets/koko-king-logo.png";
+import { 
+  startGPSTracking, 
+  stopGPSTracking, 
+  getRestaurantLocation, 
+  updateDriverLocation,
+  generateCustomerLocation
+} from "@/lib/gpsSimulator";
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
@@ -16,6 +23,7 @@ const DriverDashboard = () => {
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [ongoingDeliveries, setOngoingDeliveries] = useState<any[]>([]);
   const [completedDeliveries, setCompletedDeliveries] = useState<any[]>([]);
+  const gpsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const driverAuth = localStorage.getItem("driverAuth");
@@ -27,6 +35,9 @@ const DriverDashboard = () => {
     const driverData = JSON.parse(driverAuth);
     setDriver(driverData);
     
+    // Initialize driver location at restaurant
+    updateDriverLocation(driverData.id, getRestaurantLocation());
+    
     // Check if driver is in queue
     const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
     const driverInQueue = queue.find((d: any) => d.driverId === driverData.id);
@@ -36,7 +47,13 @@ const DriverDashboard = () => {
 
     // Refresh orders every 3 seconds
     const interval = setInterval(() => loadOrders(driverData), 3000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+      if (gpsIntervalRef.current) {
+        stopGPSTracking(gpsIntervalRef.current);
+      }
+    };
   }, [navigate]);
 
   const loadOrders = (driverData: any) => {
@@ -107,6 +124,11 @@ const DriverDashboard = () => {
     const orderIndex = orders.findIndex((o: any) => o.id === orderId);
     
     if (orderIndex !== -1) {
+      // Generate customer location if not exists
+      if (!orders[orderIndex].customerLocation) {
+        orders[orderIndex].customerLocation = generateCustomerLocation();
+      }
+      
       orders[orderIndex].deliveryStatus = "accepted";
       orders[orderIndex].acceptedAt = new Date().toISOString();
       
@@ -135,7 +157,28 @@ const DriverDashboard = () => {
       
       localStorage.setItem("orders", JSON.stringify(orders));
       loadOrders(driver);
-      toast.success("Order picked up! On route to customer.");
+      
+      // Start GPS tracking simulation
+      const customerLocation = orders[orderIndex].customerLocation;
+      if (customerLocation && driver) {
+        // Stop any existing tracking
+        if (gpsIntervalRef.current) {
+          stopGPSTracking(gpsIntervalRef.current);
+        }
+        
+        // Start new tracking
+        gpsIntervalRef.current = startGPSTracking(
+          driver.id,
+          customerLocation,
+          (location) => {
+            console.log("GPS Update:", location);
+          }
+        );
+        
+        toast.success("Order picked up! GPS tracking started. On route to customer.");
+      } else {
+        toast.success("Order picked up! On route to customer.");
+      }
     }
   };
 
@@ -147,6 +190,15 @@ const DriverDashboard = () => {
       orders[orderIndex].status = "delivered";
       orders[orderIndex].deliveryStatus = "delivered";
       orders[orderIndex].deliveredAt = new Date().toISOString();
+      
+      // Stop GPS tracking
+      if (gpsIntervalRef.current) {
+        stopGPSTracking(gpsIntervalRef.current);
+        gpsIntervalRef.current = null;
+      }
+      
+      // Reset driver location to restaurant
+      updateDriverLocation(driver.id, getRestaurantLocation());
       
       // Update driver queue - set back to online
       const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
@@ -170,7 +222,7 @@ const DriverDashboard = () => {
       
       localStorage.setItem("orders", JSON.stringify(orders));
       loadOrders(driver);
-      toast.success("Delivery completed! You're back in the queue.");
+      toast.success("Delivery completed! GPS tracking stopped. You're back in the queue.");
     }
   };
 

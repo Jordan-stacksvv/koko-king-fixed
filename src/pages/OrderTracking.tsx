@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import kokoKingLogo from "@/assets/koko-king-logo.png";
+import LiveTrackingMap from "@/components/LiveTrackingMap";
+import { getDriverLocation, calculateETA, type GPSCoordinate } from "@/lib/gpsSimulator";
 
 const OrderTracking = () => {
   const [searchParams] = useSearchParams();
@@ -26,6 +28,8 @@ const OrderTracking = () => {
   const [order, setOrder] = useState<any>(null);
   const [driver, setDriver] = useState<any>(null);
   const [estimatedTime, setEstimatedTime] = useState<string>("Calculating...");
+  const [driverLocation, setDriverLocation] = useState<GPSCoordinate | null>(null);
+  const [customerLocation, setCustomerLocation] = useState<GPSCoordinate | null>(null);
 
   useEffect(() => {
     if (!orderId) {
@@ -57,11 +61,29 @@ const OrderTracking = () => {
       const foundDriver = drivers.find((d: any) => d.id === foundOrder.assignedDriver);
       setDriver(foundDriver);
       
+      // Get driver's current GPS location
+      const driverGPS = getDriverLocation(foundOrder.assignedDriver);
+      setDriverLocation(driverGPS);
+      
+      // Get customer location from order
+      if (foundOrder.customerLocation) {
+        setCustomerLocation(foundOrder.customerLocation);
+        
+        // Calculate real-time ETA based on GPS
+        if (driverGPS && foundOrder.deliveryStatus === "on-route") {
+          const eta = calculateETA(driverGPS, foundOrder.customerLocation);
+          setEstimatedTime(`${eta} minutes`);
+        }
+      }
+      
       // Calculate estimated arrival time
       if (foundOrder.deliveryStatus === "on-route") {
-        // Simulate 10-20 minutes delivery time
-        const minutes = Math.floor(Math.random() * 10) + 10;
-        setEstimatedTime(`${minutes} minutes`);
+        if (driverGPS && foundOrder.customerLocation) {
+          const eta = calculateETA(driverGPS, foundOrder.customerLocation);
+          setEstimatedTime(`${eta} minutes`);
+        } else {
+          setEstimatedTime("10-20 minutes");
+        }
       } else if (foundOrder.deliveryStatus === "accepted") {
         setEstimatedTime("Driver is preparing to pick up");
       } else if (foundOrder.deliveryStatus === "delivered") {
@@ -238,6 +260,15 @@ const OrderTracking = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Live GPS Tracking Map */}
+        {hasDriver && isInTransit && (
+          <LiveTrackingMap
+            orderId={order.id}
+            driverLocation={driverLocation || undefined}
+            customerLocation={customerLocation || undefined}
+          />
+        )}
 
         {/* Driver Information */}
         {hasDriver && (
