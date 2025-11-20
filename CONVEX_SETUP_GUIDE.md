@@ -207,6 +207,19 @@ export default defineSchema({
     data: v.any(),
     calculatedAt: v.string(),
   }).index("by_branch_and_date", ["branchId", "date"]),
+
+  // Delivery Pricing Tiers Table
+  deliveryPricing: defineTable({
+    branchId: v.id("branches"),
+    minDistance: v.number(), // in km
+    maxDistance: v.number(), // in km
+    price: v.number(),
+    isActive: v.boolean(),
+    createdAt: v.string(),
+    updatedBy: v.optional(v.id("users")),
+  })
+    .index("by_branch", ["branchId"])
+    .index("by_active", ["isActive"]),
 });
 ```
 
@@ -621,6 +634,94 @@ export const upsert = mutation({
         updatedBy: args.updatedBy,
       });
     }
+  },
+});
+```
+
+---
+
+### 6. Delivery Pricing Functions
+
+#### File: `convex/deliveryPricing.ts`
+
+```typescript
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+// Create delivery pricing tier
+export const create = mutation({
+  args: {
+    branchId: v.id("branches"),
+    minDistance: v.number(),
+    maxDistance: v.number(),
+    price: v.number(),
+    updatedBy: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("deliveryPricing", {
+      ...args,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    });
+  },
+});
+
+// Get all pricing tiers for a branch
+export const listByBranch = query({
+  args: { branchId: v.id("branches") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("deliveryPricing")
+      .withIndex("by_branch", (q) => q.eq("branchId", args.branchId))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+  },
+});
+
+// Update pricing tier
+export const update = mutation({
+  args: {
+    id: v.id("deliveryPricing"),
+    minDistance: v.optional(v.number()),
+    maxDistance: v.optional(v.number()),
+    price: v.optional(v.number()),
+    isActive: v.optional(v.boolean()),
+    updatedBy: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...updates } = args;
+    await ctx.db.patch(id, updates);
+  },
+});
+
+// Delete pricing tier
+export const remove = mutation({
+  args: { id: v.id("deliveryPricing") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, { isActive: false });
+  },
+});
+
+// Calculate delivery fee based on distance
+export const calculateFee = query({
+  args: {
+    branchId: v.id("branches"),
+    distance: v.number(), // in km
+  },
+  handler: async (ctx, args) => {
+    const tiers = await ctx.db
+      .query("deliveryPricing")
+      .withIndex("by_branch", (q) => q.eq("branchId", args.branchId))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    // Find matching tier
+    const matchingTier = tiers.find(
+      (tier) =>
+        args.distance >= tier.minDistance && args.distance <= tier.maxDistance
+    );
+
+    return matchingTier?.price || 5.0; // Default to ₵5.00 if no tier found
   },
 });
 ```

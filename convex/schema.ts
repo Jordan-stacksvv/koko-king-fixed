@@ -267,4 +267,17 @@ export default defineSchema({
     .index("by_order", ["orderId"])
     .index("by_status", ["status"])
     .index("by_reference", ["reference"]),
+
+  // Delivery Pricing Tiers Table
+  deliveryPricing: defineTable({
+    branchId: v.string(),
+    minDistance: v.number(), // in km
+    maxDistance: v.number(), // in km
+    price: v.number(),
+    isActive: v.boolean(),
+    createdAt: v.string(),
+    updatedBy: v.optional(v.string()),
+  })
+    .index("by_branch", ["branchId"])
+    .index("by_active", ["isActive"]),
 });
