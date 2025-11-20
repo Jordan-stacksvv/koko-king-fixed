@@ -67,9 +67,8 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center transition-transform hover:scale-105">
-            <img src={logoSrc} alt="Koko King" className="h-8 sm:h-10 w-auto cursor-pointer" />
+            <img src={logoSrc} alt="Koko King" className="h-8 sm:h-10 w-auto max-w-[150px] object-contain cursor-pointer" />
           </Link>
-
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             <Link to="/" className={`font-medium transition-colors ${isActive("/") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
