@@ -142,6 +142,7 @@ const DriverDashboard = () => {
     
     if (orderIndex !== -1) {
       orders[orderIndex].status = "delivered";
+      orders[orderIndex].deliveryStatus = "delivered";
       orders[orderIndex].deliveredAt = new Date().toISOString();
       localStorage.setItem("orders", JSON.stringify(orders));
       
@@ -150,11 +151,12 @@ const DriverDashboard = () => {
       const driverIndex = queue.findIndex((d: any) => d.id === driver.id);
       if (driverIndex !== -1) {
         queue[driverIndex].status = "online";
+        queue[driverIndex].currentOrder = null;
       }
       localStorage.setItem("driverQueue", JSON.stringify(queue));
       
       loadOrders(driver.id);
-      toast.success("Order delivered! Earnings updated.");
+      toast.success("✅ Delivery confirmed! Order completed.");
     }
   };
 
