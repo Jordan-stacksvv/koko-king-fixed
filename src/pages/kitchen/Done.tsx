@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,26 +8,29 @@ import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 import { toast } from "sonner";
 
 export default function KitchenDone() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [onlineDrivers, setOnlineDrivers] = useState<any[]>([]);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [assignmentInProgress, setAssignmentInProgress] = useState(false);
 
-  // Fetch done orders from Convex
-  const allOrders = useQuery(api.orders.list);
-  const orders = allOrders?.filter((order: any) => 
-    order.status === "done" || order.deliveryStatus
-  ) || [];
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
-  // Fetch online drivers
-  const branchId = localStorage.getItem("selectedBranch") || "";
-  const onlineDrivers = useQuery(api.drivers.getOnlineDrivers, 
-    branchId ? { branchId } : "skip"
-  ) || [];
+  const loadData = () => {
+    const storedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const doneOrders = storedOrders.filter((order: any) => 
+      order.status === "done" || order.deliveryStatus
+    );
+    setOrders(doneOrders);
 
-  // Mutations
-  const assignDriver = useMutation(api.orders.assignDriver);
-  const updateStatus = useMutation(api.orders.updateStatus);
-  const updateQueueStatus = useMutation(api.drivers.updateQueueStatus);
+    const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+    const available = driverQueue.filter((d: any) => d.status === "online" && !d.currentDelivery);
+    setOnlineDrivers(available);
+  };
 
   const handleAssignDriver = (order: any) => {
     setSelectedOrder(order);
@@ -96,43 +97,53 @@ export default function KitchenDone() {
     // In real implementation, this would send notifications to all drivers
   };
 
-  const assignOrderToDriver = async (driver: any) => {
-    try {
-      await assignDriver({
-        id: selectedOrder._id,
-        driverId: driver._id,
-        driverName: driver.fullName,
-        driverPhone: driver.phone,
-      });
+  const assignOrderToDriver = (driver: any) => {
+    const updatedOrders = orders.map((order) =>
+      order.id === selectedOrder.id
+        ? {
+            ...order,
+            assignedDriver: driver.driverId,
+            driverName: driver.name,
+            driverPhone: driver.phone,
+            deliveryStatus: "pending-approval",
+            assignedAt: new Date().toISOString(),
+          }
+        : order
+    );
 
-      // Update driver queue status to on-delivery
-      await updateQueueStatus({
-        driverId: driver._id,
-        status: "on-delivery",
-      });
+    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const finalOrders = allOrders.map((order: any) =>
+      order.id === selectedOrder.id ? updatedOrders.find((o) => o.id === selectedOrder.id) : order
+    );
 
-      toast.success(`Order ${selectedOrder.orderId} assigned to ${driver.fullName}`);
-      setShowAssignDialog(false);
-    } catch (error) {
-      toast.error("Failed to assign order to driver");
-    }
+    localStorage.setItem("orders", JSON.stringify(finalOrders));
+    setOrders(updatedOrders);
+
+    // Update driver status
+    const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+    const updatedQueue = driverQueue.map((d: any) =>
+      d.driverId === driver.driverId ? { ...d, currentDelivery: selectedOrder.id, status: "on-delivery" } : d
+    );
+    localStorage.setItem("driverQueue", JSON.stringify(updatedQueue));
+
+    toast.success(`Order ${selectedOrder.orderId} assigned to ${driver.name}`);
+    setShowAssignDialog(false);
   };
 
   const handleManualAssign = (driver: any) => {
     assignOrderToDriver(driver);
   };
 
-  const handleCompleteOrder = async (orderId: string) => {
-    try {
-      await updateStatus({
-        id: orderId as any,
-        status: "completed",
-      });
-      
-      toast.success("Order marked as completed for pickup");
-    } catch (error) {
-      toast.error("Failed to complete order");
-    }
+  const handleCompleteOrder = (orderId: string) => {
+    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const updated = allOrders.map((o: any) =>
+      o.id === orderId
+        ? { ...o, status: "completed", completedAt: new Date().toISOString() }
+        : o
+    );
+    localStorage.setItem("orders", JSON.stringify(updated));
+    loadData();
+    toast.success("Order marked as completed for pickup");
   };
 
   const getDeliveryStatusBadge = (status: string) => {
@@ -248,7 +259,7 @@ export default function KitchenDone() {
                   
                   {(order.deliveryMethod === "pickup" || order.orderType === "walk-in") && !order.deliveryStatus && (
                     <Button
-                      onClick={() => handleCompleteOrder(order)}
+                      onClick={() => handleCompleteOrder(order.id)}
                       className="w-full"
                       size="lg"
                       variant="default"
