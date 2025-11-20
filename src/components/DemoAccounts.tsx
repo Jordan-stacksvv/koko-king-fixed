@@ -31,8 +31,8 @@ export const DemoAccounts = () => {
     {
       role: "Driver",
       icon: TruckIcon,
-      username: "driver@koko.com",
-      password: "driver123",
+      username: "0501234567",
+      password: "driver2025",
       access: "Delivery dashboard, queue, earnings",
       color: "text-green-600"
     }
@@ -60,11 +60,15 @@ export const DemoAccounts = () => {
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Username:</span>
+                  <span className="text-muted-foreground">
+                    {account.role === "Driver" ? "Phone:" : "Username:"}
+                  </span>
                   <p className="font-mono font-semibold">{account.username}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Password:</span>
+                  <span className="text-muted-foreground">
+                    {account.role === "Driver" ? "Passkey:" : "Password:"}
+                  </span>
                   <p className="font-mono font-semibold">{account.password}</p>
                 </div>
               </div>

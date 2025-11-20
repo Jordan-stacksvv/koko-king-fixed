@@ -1,6 +1,10 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { initializeDemoDrivers } from "./data/demoDrivers";
+
+// Initialize demo drivers on app startup
+initializeDemoDrivers();
 
 // Register service worker for PWA
 if ("serviceWorker" in navigator) {
