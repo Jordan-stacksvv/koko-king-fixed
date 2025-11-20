@@ -152,6 +152,16 @@ const Checkout = () => {
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email (Optional)</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="your@email.com"
+                  />
+                </div>
                 {deliveryMethod === "delivery" && (
                   <div className="space-y-2">
                     <Label htmlFor="address">Delivery Address</Label>

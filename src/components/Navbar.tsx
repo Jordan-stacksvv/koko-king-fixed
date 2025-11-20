@@ -8,17 +8,49 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 export const Navbar = () => {
   const location = useLocation();
   const [cartCount, setCartCount] = useState(0);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  
   useEffect(() => {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     setCartCount(cart.reduce((sum: number, item: any) => sum + item.quantity, 0));
+    
     const handleCartUpdate = () => {
       const updatedCart = JSON.parse(localStorage.getItem("cart") || "[]");
       setCartCount(updatedCart.reduce((sum: number, item: any) => sum + item.quantity, 0));
     };
+    
     window.addEventListener("cartUpdated", handleCartUpdate);
     return () => window.removeEventListener("cartUpdated", handleCartUpdate);
   }, []);
+
+  useEffect(() => {
+    const loadActiveOrders = () => {
+      const customerPhone = localStorage.getItem("customerPhone");
+      const customerEmail = localStorage.getItem("customerEmail");
+      
+      if (!customerPhone && !customerEmail) {
+        setActiveOrdersCount(0);
+        return;
+      }
+      
+      const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const customerOrders = allOrders.filter((order: any) => 
+        (order.customerPhone === customerPhone || order.customerEmail === customerEmail) &&
+        order.deliveryStatus !== "delivered" &&
+        order.status !== "completed"
+      );
+      
+      setActiveOrdersCount(customerOrders.length);
+    };
+
+    loadActiveOrders();
+    
+    // Refresh active orders count every 3 seconds
+    const interval = setInterval(loadActiveOrders, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   const isActive = (path: string) => location.pathname === path;
   
   return (
@@ -37,14 +69,19 @@ export const Navbar = () => {
             <Link to="/menu" className={`font-medium transition-colors ${isActive("/menu") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
               Menu
             </Link>
-            <Link to="/customer-orders" className={`font-medium transition-colors ${isActive("/customer-orders") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
-              Track Orders
-            </Link>
             <Link to="/store-locator" className={`font-medium transition-colors ${isActive("/store-locator") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
               Locations
             </Link>
             <Link to="/contact" className={`font-medium transition-colors ${isActive("/contact") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
               Contact
+            </Link>
+            <Link to="/customer-orders" className={`font-medium transition-colors relative ${isActive("/customer-orders") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
+              Track Order
+              {activeOrdersCount > 0 && (
+                <Badge className="absolute -top-2 -right-3 h-5 w-5 flex items-center justify-center p-0 bg-orange-500 text-xs">
+                  {activeOrdersCount}
+                </Badge>
+              )}
             </Link>
           </div>
 
@@ -95,13 +132,6 @@ export const Navbar = () => {
                     Menu
                   </Link>
                   <Link 
-                    to="/customer-orders" 
-                    className={`text-lg font-medium py-2 px-4 rounded-lg transition-colors ${isActive("/customer-orders") ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Track Orders
-                  </Link>
-                  <Link 
                     to="/store-locator" 
                     className={`text-lg font-medium py-2 px-4 rounded-lg transition-colors ${isActive("/store-locator") ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                     onClick={() => setIsOpen(false)}
@@ -114,6 +144,20 @@ export const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     Contact
+                  </Link>
+                  <Link 
+                    to="/customer-orders" 
+                    className={`text-lg font-medium py-2 px-4 rounded-lg transition-colors relative ${isActive("/customer-orders") ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <span className="flex items-center gap-2">
+                      Track Order
+                      {activeOrdersCount > 0 && (
+                        <Badge className="h-5 w-5 flex items-center justify-center p-0 bg-orange-500 text-xs">
+                          {activeOrdersCount}
+                        </Badge>
+                      )}
+                    </span>
                   </Link>
                 </nav>
               </SheetContent>
