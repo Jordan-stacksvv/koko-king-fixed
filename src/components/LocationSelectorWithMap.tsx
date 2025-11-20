@@ -65,8 +65,10 @@ export const LocationSelectorWithMap = ({
     onRestaurantChange(location.nearestRestaurant);
     localStorage.setItem("selectedRestaurant", JSON.stringify(location.nearestRestaurant));
     localStorage.setItem("deliveryAddress", location.address);
+    localStorage.setItem("selectedLocation", location.address); // Sync to checkout
     localStorage.setItem("deliveryCoords", JSON.stringify({ lat: location.lat, lng: location.lng }));
     setIsDialogOpen(false);
+    toast.success("Delivery address updated!");
   };
 
   const getDirections = (restaurant: Restaurant) => {

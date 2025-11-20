@@ -136,6 +136,18 @@ export default function KitchenDone() {
     assignOrderToDriver(driver);
   };
 
+  const handleCompleteOrder = (order: any) => {
+    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const updated = allOrders.map((o: any) =>
+      o.id === order.id
+        ? { ...o, status: "completed", deliveryStatus: "completed", completedAt: new Date().toISOString() }
+        : o
+    );
+    localStorage.setItem("orders", JSON.stringify(updated));
+    loadData();
+    toast.success("Order marked as completed!");
+  };
+
   const getDeliveryStatusBadge = (status: string) => {
     const statusConfig = {
       assigned: { label: "Assigned", variant: "secondary" as const, icon: Clock },
@@ -246,12 +258,16 @@ export default function KitchenDone() {
                     </Button>
                   )}
                   
-                  {order.deliveryMethod === "pickup" && (
-                    <div className="bg-muted p-3 rounded-lg text-center">
-                      <Package className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm font-medium">Ready for Pickup</p>
-                      <p className="text-xs text-muted-foreground">Customer can collect order</p>
-                    </div>
+                  {(order.deliveryMethod === "pickup" || order.orderType === "walk-in") && !order.deliveryStatus && (
+                    <Button
+                      onClick={() => handleCompleteOrder(order)}
+                      className="w-full"
+                      size="lg"
+                      variant="default"
+                    >
+                      <CheckCircle2 className="mr-2 h-5 w-5" />
+                      Mark as Completed
+                    </Button>
                   )}
                 </CardContent>
               </Card>

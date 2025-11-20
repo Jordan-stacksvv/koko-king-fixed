@@ -40,18 +40,39 @@ export default function KitchenOrders() {
       const currentOrders = JSON.parse(localStorage.getItem("orders") || "[]");
       const onlineOrders = currentOrders.filter((o: any) => o.orderType === "online" && o.status === "pending");
       
-      // Check for new online orders and show alert
-      if (onlineOrders.length > prevOnlineOrdersCountRef.current) {
-        const newOrder = onlineOrders[onlineOrders.length - 1];
-        setNewOrderAlert(newOrder);
-        audioRef.current?.play();
+      // Check for new online orders and show alert with looping sound
+      if (onlineOrders.length > 0) {
+        if (onlineOrders.length > prevOnlineOrdersCountRef.current) {
+          const newOrder = onlineOrders[onlineOrders.length - 1];
+          setNewOrderAlert(newOrder);
+        }
+        // Loop sound while there are pending orders
+        if (audioRef.current && audioRef.current.paused) {
+          audioRef.current.loop = true;
+          audioRef.current.play().catch(console.error);
+        }
+      } else {
+        // Stop sound when no pending orders
+        if (audioRef.current && !audioRef.current.paused) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current.loop = false;
+          setNewOrderAlert(null);
+        }
       }
       prevOnlineOrdersCountRef.current = onlineOrders.length;
       
       loadOrders();
       checkAndResetDaily();
     }, 3000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
   }, []);
 
   const checkAndResetDaily = () => {
@@ -85,6 +106,17 @@ export default function KitchenOrders() {
     );
     localStorage.setItem("orders", JSON.stringify(updatedOrders));
     setOrders(updatedOrders);
+    
+    // Stop notification sound when order is confirmed
+    if (newStatus === "confirmed") {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.loop = false;
+      }
+      setNewOrderAlert(null);
+    }
+    
     toast.success(`Order ${orderId.slice(0, 8)} moved to ${newStatus}`);
   };
 

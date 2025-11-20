@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { LocationSelectorWithMap } from "@/components/LocationSelectorWithMap";
@@ -22,6 +22,14 @@ const Checkout = () => {
     address: "",
     notes: "",
   });
+
+  // Sync selected location address to delivery address
+  useEffect(() => {
+    const selectedLocation = localStorage.getItem("selectedLocation");
+    if (selectedLocation && deliveryMethod === "delivery") {
+      setFormData(prev => ({ ...prev, address: selectedLocation }));
+    }
+  }, [selectedRestaurant, deliveryMethod]);
 
   const cart = JSON.parse(localStorage.getItem("cart") || "[]");
   const subtotal = cart.reduce((sum: number, item: any) => {
