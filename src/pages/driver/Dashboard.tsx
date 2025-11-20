@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,41 +44,40 @@ const DriverDashboard = () => {
     const driverInQueue = queue.find((d: any) => d.driverId === driverData.id);
     setIsOnline(driverInQueue?.status === "online");
     
+    loadOrders(driverData);
+
+    // Refresh orders every 3 seconds
+    const interval = setInterval(() => loadOrders(driverData), 3000);
+    
     return () => {
+      clearInterval(interval);
       if (gpsIntervalRef.current) {
         stopGPSTracking(gpsIntervalRef.current);
       }
     };
   }, [navigate]);
 
-  // Fetch orders from Convex
-  const allOrders = useQuery(api.orders.listByDriver, 
-    driver ? { driverId: driver.id } : "skip"
-  );
-
-  // Update delivery status mutation
-  const updateDeliveryStatus = useMutation(api.orders.updateDeliveryStatus);
-  const updateQueueStatus = useMutation(api.drivers.updateQueueStatus);
-
-  useEffect(() => {
-    if (!allOrders || !driver) return;
-
+  const loadOrders = (driverData: any) => {
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
     const today = new Date().toDateString();
     
     // Pending orders assigned to this driver waiting for acceptance
-    const pending = allOrders.filter((order: any) => 
+    const pending = orders.filter((order: any) => 
+      order.assignedDriver === driverData.id &&
       order.deliveryStatus === "pending-approval" &&
       new Date(order.timestamp).toDateString() === today
     );
     
     // Ongoing deliveries (accepted or on-route)
-    const ongoing = allOrders.filter((order: any) => 
+    const ongoing = orders.filter((order: any) => 
+      order.assignedDriver === driverData.id &&
       (order.deliveryStatus === "accepted" || order.deliveryStatus === "on-route") &&
       new Date(order.timestamp).toDateString() === today
     );
     
     // Completed today
-    const completed = allOrders.filter((order: any) => 
+    const completed = orders.filter((order: any) => 
+      order.assignedDriver === driverData.id &&
       order.deliveryStatus === "delivered" &&
       new Date(order.timestamp).toDateString() === today
     );
@@ -88,7 +85,7 @@ const DriverDashboard = () => {
     setPendingOrders(pending);
     setOngoingDeliveries(ongoing);
     setCompletedDeliveries(completed);
-  }, [allOrders, driver]);
+  };
 
   const handleToggleOnline = () => {
     const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
@@ -125,87 +122,104 @@ const DriverDashboard = () => {
     }
   };
 
-  const handleAcceptOrder = async (orderId: string) => {
-    try {
-      await updateDeliveryStatus({
-        id: orderId as any,
-        deliveryStatus: "accepted",
-      });
-
-      toast.success("Order accepted! Navigate to customer location");
-    } catch (error) {
-      toast.error("Failed to accept order");
-    }
-  };
-
-  const handleRejectOrder = async (orderId: string) => {
-    try {
-      const order = pendingOrders.find(o => o._id === orderId);
-      if (!order) return;
-
-      // Remove driver assignment - reassign
-      await updateDeliveryStatus({
-        id: orderId as any,
-        deliveryStatus: "pending-approval",
-      });
-
-      toast.info("Order rejected and returned to queue");
-    } catch (error) {
-      toast.error("Failed to reject order");
-    }
-  };
-
-  const handleMarkPickedUp = async (orderId: string) => {
-    try {
-      await updateDeliveryStatus({
-        id: orderId as any,
-        deliveryStatus: "on-route",
-      });
-
-      const order = ongoingDeliveries.find(o => o._id === orderId);
-      if (order && order.customerLocation) {
-        if (gpsIntervalRef.current) {
-          stopGPSTracking(gpsIntervalRef.current);
-        }
-        
-        gpsIntervalRef.current = startGPSTracking(
-          driver.id,
-          getRestaurantLocation(),
-          order.customerLocation
-        );
+  const handleAcceptOrder = (orderId: string) => {
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const orderIndex = orders.findIndex((o: any) => o.id === orderId);
+    
+    if (orderIndex !== -1) {
+      orders[orderIndex].deliveryStatus = "accepted";
+      
+      // Update driver queue status
+      const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+      const driverIndex = queue.findIndex((d: any) => d.driverId === driver.id);
+      if (driverIndex !== -1) {
+        queue[driverIndex].currentDelivery = orderId;
+        queue[driverIndex].status = "on-delivery";
+        localStorage.setItem("driverQueue", JSON.stringify(queue));
       }
       
-      toast.success("Marked as picked up. GPS tracking started!");
-    } catch (error) {
-      toast.error("Failed to update status");
+      localStorage.setItem("orders", JSON.stringify(orders));
+      loadOrders(driver);
+      toast.success("Order accepted! Navigate to customer location");
     }
   };
 
-  const handleMarkDelivered = async (orderId: string) => {
-    try {
-      const order = ongoingDeliveries.find(o => o._id === orderId);
+  const handleRejectOrder = (orderId: string) => {
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const orderIndex = orders.findIndex((o: any) => o.id === orderId);
+    
+    if (orderIndex !== -1) {
+      orders[orderIndex].assignedDriver = null;
+      orders[orderIndex].deliveryStatus = null;
+      localStorage.setItem("orders", JSON.stringify(orders));
+      loadOrders(driver);
+      toast.info("Order rejected and returned to queue");
+    }
+  };
+
+  const handleMarkPickedUp = (orderId: string) => {
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const orderIndex = orders.findIndex((o: any) => o.id === orderId);
+    
+    if (orderIndex !== -1) {
+      orders[orderIndex].deliveryStatus = "on-route";
       
-      await updateDeliveryStatus({
-        id: orderId as any,
-        deliveryStatus: "delivered",
-      });
+      // Generate customer location if not exists
+      if (!orders[orderIndex].customerLocation) {
+        orders[orderIndex].customerLocation = generateCustomerLocation();
+      }
+      
+      // Start GPS tracking
+      if (gpsIntervalRef.current) {
+        stopGPSTracking(gpsIntervalRef.current);
+      }
+      
+      gpsIntervalRef.current = startGPSTracking(
+        driver.id,
+        getRestaurantLocation(),
+        orders[orderIndex].customerLocation
+      );
+      
+      localStorage.setItem("orders", JSON.stringify(orders));
+      loadOrders(driver);
+      toast.success("Marked as picked up. GPS tracking started!");
+    }
+  };
 
-      // Update driver queue status back to online
-      await updateQueueStatus({
-        driverId: driver.id,
-        status: "online",
-      });
-
+  const handleMarkDelivered = (orderId: string) => {
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const orderIndex = orders.findIndex((o: any) => o.id === orderId);
+    
+    if (orderIndex !== -1) {
+      const order = orders[orderIndex];
+      orders[orderIndex].status = "completed";
+      orders[orderIndex].deliveryStatus = "delivered";
+      orders[orderIndex].deliveredAt = new Date().toISOString();
+      
+      // Calculate driver commission (20% of order total)
+      const commission = (order.total * 0.2).toFixed(2);
+      
+      // Stop GPS tracking
       if (gpsIntervalRef.current) {
         stopGPSTracking(gpsIntervalRef.current);
         gpsIntervalRef.current = null;
       }
       
+      // Reset driver location to restaurant
       updateDriverLocation(driver.id, getRestaurantLocation());
       
-      toast.success(`Delivery completed! Earned GH₵${order?.driverCommission || 0}`);
-    } catch (error) {
-      toast.error("Failed to complete delivery");
+      // Update driver queue - mark as available
+      const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+      const driverIndex = queue.findIndex((d: any) => d.driverId === driver.id);
+      if (driverIndex !== -1) {
+        queue[driverIndex].currentDelivery = null;
+        queue[driverIndex].status = "online";
+        localStorage.setItem("driverQueue", JSON.stringify(queue));
+      }
+      
+      localStorage.setItem("orders", JSON.stringify(orders));
+      loadOrders(driver);
+      toast.success(`Delivery completed! Earned GH₵${commission}`);
     }
   };
 
