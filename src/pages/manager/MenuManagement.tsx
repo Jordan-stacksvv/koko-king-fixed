@@ -59,7 +59,7 @@ const MenuManagement = () => {
             <h1 className="text-3xl font-bold">Menu Management</h1>
             <p className="text-muted-foreground">View and manage menu items ({menuItems.length} total)</p>
           </div>
-          <Button onClick={() => navigate("/admin/extras")} variant="outline">
+          <Button onClick={() => navigate("/manager/extras")} variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             Menu Extras
           </Button>
