@@ -50,8 +50,13 @@ export const HeroBanner = () => {
         >
           <img
             src={banner}
-            alt={`Banner ${index + 1}`}
+            alt={`Koko King Banner ${index + 1}`}
             className="w-full h-full object-cover object-center"
+            style={{ 
+              maxHeight: '380px',
+              objectFit: 'cover',
+              objectPosition: 'center'
+            }}
           />
         </div>
       ))}

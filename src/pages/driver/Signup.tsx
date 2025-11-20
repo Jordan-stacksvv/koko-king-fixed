@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 const DriverSignup = () => {
   const navigate = useNavigate();
+  const [branches, setBranches] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -21,8 +22,16 @@ const DriverSignup = () => {
     passportPic: null as File | null,
     licenseNumber: "",
     bankAccount: "",
-    emergencyContact: ""
+    emergencyContact: "",
+    selectedBranch: "",
+    selectedBranchId: ""
   });
+
+  useEffect(() => {
+    // Load branches from localStorage
+    const storedBranches = JSON.parse(localStorage.getItem("branches") || "[]");
+    setBranches(storedBranches);
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -30,11 +39,22 @@ const DriverSignup = () => {
     }
   };
 
+  const handleBranchSelect = (branchName: string) => {
+    const branch = branches.find(b => b.name === branchName);
+    setFormData({ 
+      ...formData, 
+      selectedBranch: branchName,
+      selectedBranchId: branch?.id || ""
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.fullName || !formData.phone || !formData.email || !formData.password || !formData.vehicleType || !formData.vehicleReg || !formData.bankAccount || !formData.emergencyContact) {
-      toast.error("Please fill all required fields");
+    if (!formData.fullName || !formData.phone || !formData.email || !formData.password || 
+        !formData.vehicleType || !formData.vehicleReg || !formData.bankAccount || 
+        !formData.emergencyContact || !formData.selectedBranch) {
+      toast.error("Please fill all required fields including branch selection");
       return;
     }
 
@@ -44,6 +64,8 @@ const DriverSignup = () => {
       id: `DRV-APP-${Date.now()}`,
       ...formData,
       passportPic: formData.passportPic?.name || null,
+      branch: formData.selectedBranch,
+      branchId: formData.selectedBranchId,
       status: "pending",
       appliedAt: new Date().toISOString()
     };
@@ -51,7 +73,7 @@ const DriverSignup = () => {
     applications.push(newApplication);
     localStorage.setItem("driverApplications", JSON.stringify(applications));
     
-    toast.success("Application submitted! You'll be notified once approved.");
+    toast.success("Application submitted to branch manager! You'll be notified once approved.");
     navigate("/driver/login");
   };
 
@@ -70,6 +92,27 @@ const DriverSignup = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Branch Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="branch">Select Branch to Work *</Label>
+              <Select 
+                value={formData.selectedBranch} 
+                onValueChange={handleBranchSelect}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.name}>
+                      {branch.name} - {branch.location}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name *</Label>

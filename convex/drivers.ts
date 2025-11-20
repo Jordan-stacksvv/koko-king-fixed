@@ -9,6 +9,7 @@ export const apply = mutation({
     email: v.string(),
     passkey: v.string(),
     branch: v.string(),
+    branchId: v.optional(v.string()),
     vehicleType: v.string(),
     vehicleReg: v.string(),
     ghanaCard: v.optional(v.string()),
