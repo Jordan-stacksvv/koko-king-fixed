@@ -24,6 +24,7 @@ const DriverDashboard = () => {
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [ongoingDeliveries, setOngoingDeliveries] = useState<any[]>([]);
   const [completedDeliveries, setCompletedDeliveries] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const gpsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -45,9 +46,13 @@ const DriverDashboard = () => {
     setIsOnline(driverInQueue?.status === "online");
     
     loadOrders(driverData);
+    loadNotifications(driverData);
 
-    // Refresh orders every 3 seconds
-    const interval = setInterval(() => loadOrders(driverData), 3000);
+    // Refresh orders and notifications every 3 seconds
+    const interval = setInterval(() => {
+      loadOrders(driverData);
+      loadNotifications(driverData);
+    }, 3000);
     
     // Sync driver location to orders every 2 seconds
     const locationSyncInterval = setInterval(() => {
@@ -112,6 +117,38 @@ const DriverDashboard = () => {
     setCompletedDeliveries(completed);
   };
 
+  const loadNotifications = (driverData: any) => {
+    const allNotifications = JSON.parse(localStorage.getItem("driverNotifications") || "[]");
+    const driverNotifications = allNotifications.filter(
+      (n: any) => n.driverId === driverData.id && !n.read
+    );
+    setNotifications(driverNotifications);
+    
+    // Show toast for new notifications
+    driverNotifications.forEach((notification: any) => {
+      if (notification.type === "assignment") {
+        toast.info(notification.message, {
+          duration: 5000,
+        });
+      } else if (notification.type === "broadcast") {
+        toast.warning(notification.message, {
+          duration: 10000,
+        });
+      } else if (notification.type === "cancellation") {
+        toast.error(notification.message);
+      }
+    });
+  };
+
+  const markNotificationAsRead = (notificationId: string) => {
+    const allNotifications = JSON.parse(localStorage.getItem("driverNotifications") || "[]");
+    const updated = allNotifications.map((n: any) =>
+      n.id === notificationId ? { ...n, read: true } : n
+    );
+    localStorage.setItem("driverNotifications", JSON.stringify(updated));
+    loadNotifications(driver);
+  };
+
   const handleToggleOnline = () => {
     const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
     const existingIndex = queue.findIndex((d: any) => d.driverId === driver.id);
@@ -168,8 +205,16 @@ const DriverDashboard = () => {
         localStorage.setItem("driverQueue", JSON.stringify(queue));
       }
       
+      // Mark related notifications as read
+      const allNotifications = JSON.parse(localStorage.getItem("driverNotifications") || "[]");
+      const updated = allNotifications.map((n: any) =>
+        n.driverId === driver.id && n.orderId === orderId ? { ...n, read: true } : n
+      );
+      localStorage.setItem("driverNotifications", JSON.stringify(updated));
+      
       localStorage.setItem("orders", JSON.stringify(orders));
       loadOrders(driver);
+      loadNotifications(driver);
       toast.success("Order accepted! Navigate to customer location");
     }
   };
@@ -181,8 +226,28 @@ const DriverDashboard = () => {
     if (orderIndex !== -1) {
       orders[orderIndex].assignedDriver = null;
       orders[orderIndex].deliveryStatus = null;
+      orders[orderIndex].driverName = null;
+      orders[orderIndex].driverPhone = null;
+      
+      // Release driver from queue
+      const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+      const driverIndex = queue.findIndex((d: any) => d.driverId === driver.id);
+      if (driverIndex !== -1) {
+        queue[driverIndex].currentDelivery = null;
+        queue[driverIndex].status = "online";
+        localStorage.setItem("driverQueue", JSON.stringify(queue));
+      }
+      
+      // Mark related notifications as read
+      const allNotifications = JSON.parse(localStorage.getItem("driverNotifications") || "[]");
+      const updated = allNotifications.map((n: any) =>
+        n.driverId === driver.id && n.orderId === orderId ? { ...n, read: true } : n
+      );
+      localStorage.setItem("driverNotifications", JSON.stringify(updated));
+      
       localStorage.setItem("orders", JSON.stringify(orders));
       loadOrders(driver);
+      loadNotifications(driver);
       toast.info("Order rejected and returned to queue");
     }
   };
