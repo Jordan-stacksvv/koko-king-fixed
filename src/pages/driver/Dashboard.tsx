@@ -1,23 +1,21 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Phone, Package, Clock, CheckCircle, Navigation, LogOut, User } from "lucide-react";
-import kokoKingLogo from "@/assets/koko-king-logo.png";
+import { Clock, MapPin, Package, DollarSign, LogOut, CheckCircle, Navigation, Phone, TruckIcon, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import kokoKingLogo from "@/assets/koko-king-logo.png";
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
   const [driver, setDriver] = useState<any>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
-  const [ongoingOrders, setOngoingOrders] = useState<any[]>([]);
-  const [completedOrders, setCompletedOrders] = useState<any[]>([]);
-  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [ongoingDeliveries, setOngoingDeliveries] = useState<any[]>([]);
+  const [completedDeliveries, setCompletedDeliveries] = useState<any[]>([]);
 
   useEffect(() => {
     const driverAuth = localStorage.getItem("driverAuth");
@@ -28,87 +26,84 @@ const DriverDashboard = () => {
 
     const driverData = JSON.parse(driverAuth);
     setDriver(driverData);
-    loadOrders(driverData.id);
-    loadOnlineStatus(driverData.id);
+    
+    // Check if driver is in queue
+    const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+    const driverInQueue = queue.find((d: any) => d.driverId === driverData.id);
+    setIsOnline(driverInQueue?.status === "online");
+    
+    loadOrders(driverData);
+
+    // Refresh orders every 3 seconds
+    const interval = setInterval(() => loadOrders(driverData), 3000);
+    return () => clearInterval(interval);
   }, [navigate]);
 
-  const loadOrders = (driverId: string) => {
+  const loadOrders = (driverData: any) => {
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const today = new Date().toDateString();
     
-    // Pending: Orders with pending-approval status assigned to this driver
-    const pending = orders.filter((o: any) => 
-      o.assignedDriver === driverId && o.deliveryStatus === "pending-approval"
+    // Pending orders assigned to this driver waiting for acceptance
+    const pending = orders.filter((order: any) => 
+      order.assignedDriver === driverData.id &&
+      order.deliveryStatus === "pending-approval" &&
+      new Date(order.timestamp).toDateString() === today
     );
     
-    // Ongoing: Orders accepted by this driver and on route
-    const ongoing = orders.filter((o: any) => 
-      o.assignedDriver === driverId && 
-      (o.deliveryStatus === "accepted" || o.deliveryStatus === "on-route")
+    // Ongoing deliveries (accepted or on-route)
+    const ongoing = orders.filter((order: any) => 
+      order.assignedDriver === driverData.id &&
+      (order.deliveryStatus === "accepted" || order.deliveryStatus === "on-route") &&
+      new Date(order.timestamp).toDateString() === today
     );
     
-    // Completed: Orders delivered by this driver
-    const completed = orders.filter((o: any) => 
-      o.assignedDriver === driverId && 
-      (o.deliveryStatus === "delivered" || o.deliveryStatus === "completed")
+    // Completed today
+    const completed = orders.filter((order: any) => 
+      order.assignedDriver === driverData.id &&
+      order.deliveryStatus === "delivered" &&
+      new Date(order.timestamp).toDateString() === today
     );
-
+    
     setPendingOrders(pending);
-    setOngoingOrders(ongoing);
-    setCompletedOrders(completed);
-
-    // Calculate earnings (20% commission)
-    const earnings = completed.reduce((sum: number, order: any) => sum + (order.total * 0.20), 0);
-    setTotalEarnings(earnings);
+    setOngoingDeliveries(ongoing);
+    setCompletedDeliveries(completed);
   };
 
-  const loadOnlineStatus = (driverId: string) => {
+  const handleToggleOnline = () => {
     const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-    const isInQueue = queue.some((d: any) => d.id === driverId && d.status === "online");
-    setIsOnline(isInQueue);
-  };
-
-  const toggleOnlineStatus = () => {
-    if (!driver) return;
-
-    const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+    const existingIndex = queue.findIndex((d: any) => d.driverId === driver.id);
     
     if (isOnline) {
-      // Go offline - remove from queue
-      const updated = queue.filter((d: any) => d.id !== driver.id);
-      localStorage.setItem("driverQueue", JSON.stringify(updated));
+      // Go offline
+      if (existingIndex !== -1) {
+        queue[existingIndex].status = "offline";
+        localStorage.setItem("driverQueue", JSON.stringify(queue));
+      }
       setIsOnline(false);
       toast.success("You are now offline");
-
-      // CONVEX TODO: Update driver status
-      // await mutation(api.drivers.goOffline, { driverId: driver.id });
     } else {
-      // Go online - add to queue
-      const newEntry = {
-        id: driver.id,
-        name: driver.fullName || driver.phone,
-        phone: driver.phone,
-        status: "online",
-        joinedAt: new Date().toISOString(),
-        currentOrder: null
-      };
-      queue.push(newEntry);
+      // Go online
+      if (existingIndex !== -1) {
+        queue[existingIndex].status = "online";
+        queue[existingIndex].joinedAt = new Date().toISOString();
+      } else {
+        queue.push({
+          id: `QUEUE-${Date.now()}`,
+          driverId: driver.id,
+          driverName: driver.fullName,
+          status: "online",
+          joinedAt: new Date().toISOString(),
+          currentDelivery: null
+        });
+      }
       localStorage.setItem("driverQueue", JSON.stringify(queue));
       setIsOnline(true);
-      toast.success("You are now online and in queue! 🚴");
-
-      // CONVEX TODO: Update driver status & notify system
-      // await mutation(api.drivers.goOnline, { 
-      //   driverId: driver.id,
-      //   location: { lat: 0, lng: 0 } // Use real geolocation
-      // });
+      toast.success("You are now online and in the delivery queue!");
     }
   };
 
   const handleAcceptOrder = (orderId: string) => {
-    if (!driver) return;
-
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const order = orders.find((o: any) => o.id === orderId);
     const orderIndex = orders.findIndex((o: any) => o.id === orderId);
     
     if (orderIndex !== -1) {
@@ -116,17 +111,17 @@ const DriverDashboard = () => {
       orders[orderIndex].acceptedAt = new Date().toISOString();
       
       // Update driver queue
-      const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-      const updatedQueue = driverQueue.map((d: any) =>
-        d.id === driver.id ? { ...d, status: "on-delivery" } : d
-      );
-      localStorage.setItem("driverQueue", JSON.stringify(updatedQueue));
+      const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+      const driverIndex = queue.findIndex((d: any) => d.driverId === driver.id);
+      if (driverIndex !== -1) {
+        queue[driverIndex].currentDelivery = orderId;
+        queue[driverIndex].status = "on-delivery";
+        localStorage.setItem("driverQueue", JSON.stringify(queue));
+      }
       
       localStorage.setItem("orders", JSON.stringify(orders));
-      loadOrders(driver.id);
-      
-      // Notify customer (toast for now, can be extended with push notifications)
-      toast.success("Order accepted! Customer has been notified 📧");
+      loadOrders(driver);
+      toast.success("Order accepted! Navigate to customer location.");
     }
   };
 
@@ -137,114 +132,129 @@ const DriverDashboard = () => {
     if (orderIndex !== -1) {
       orders[orderIndex].deliveryStatus = "on-route";
       orders[orderIndex].pickedUpAt = new Date().toISOString();
+      
       localStorage.setItem("orders", JSON.stringify(orders));
-      loadOrders(driver.id);
-      toast.success("Order marked as picked up! On route to customer 🚴");
+      loadOrders(driver);
+      toast.success("Order picked up! On route to customer.");
     }
   };
 
   const handleMarkDelivered = (orderId: string) => {
-    if (!driver) return;
-
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
     const orderIndex = orders.findIndex((o: any) => o.id === orderId);
     
     if (orderIndex !== -1) {
-      // Update order status to delivered
-      orders[orderIndex].deliveryStatus = "delivered";
       orders[orderIndex].status = "delivered";
+      orders[orderIndex].deliveryStatus = "delivered";
       orders[orderIndex].deliveredAt = new Date().toISOString();
-      localStorage.setItem("orders", JSON.stringify(orders));
       
-      // Return driver to queue
+      // Update driver queue - set back to online
       const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-      const driverIndex = queue.findIndex((d: any) => d.id === driver.id);
+      const driverIndex = queue.findIndex((d: any) => d.driverId === driver.id);
       if (driverIndex !== -1) {
-        queue[driverIndex].status = "online";
         queue[driverIndex].currentDelivery = null;
+        queue[driverIndex].status = "online";
+        localStorage.setItem("driverQueue", JSON.stringify(queue));
       }
-      localStorage.setItem("driverQueue", JSON.stringify(queue));
-      
-      loadOrders(driver.id);
-      toast.success("✅ Delivery completed! You're back in the queue 🎉");
-    }
-  };
 
-  const openMap = (address: string) => {
-    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
-    window.open(mapsUrl, "_blank");
+      // Update driver earnings (20% commission)
+      const drivers = JSON.parse(localStorage.getItem("drivers") || "[]");
+      const driverDataIndex = drivers.findIndex((d: any) => d.id === driver.id);
+      if (driverDataIndex !== -1) {
+        const commission = orders[orderIndex].total * 0.2;
+        drivers[driverDataIndex].earnings = (drivers[driverDataIndex].earnings || 0) + commission;
+        drivers[driverDataIndex].deliveries = drivers[driverDataIndex].deliveries || [];
+        drivers[driverDataIndex].deliveries.push(orderId);
+        localStorage.setItem("drivers", JSON.stringify(drivers));
+      }
+      
+      localStorage.setItem("orders", JSON.stringify(orders));
+      loadOrders(driver);
+      toast.success("Delivery completed! You're back in the queue.");
+    }
   };
 
   const handleLogout = () => {
-    // Remove from queue on logout
-    if (driver) {
-      const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-      const updated = queue.filter((d: any) => d.id !== driver.id);
-      localStorage.setItem("driverQueue", JSON.stringify(updated));
+    // Set driver offline before logout
+    const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+    const existingIndex = queue.findIndex((d: any) => d.driverId === driver?.id);
+    if (existingIndex !== -1) {
+      queue[existingIndex].status = "offline";
+      localStorage.setItem("driverQueue", JSON.stringify(queue));
     }
     
     localStorage.removeItem("driverAuth");
+    toast.success("Logged out successfully");
     navigate("/driver/login");
   };
 
-  if (!driver) return null;
+  const openMap = (address: string) => {
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    window.open(mapsUrl, "_blank");
+  };
+
+  if (!driver) {
+    return null;
+  }
+
+  const totalEarnings = completedDeliveries.reduce((sum, order) => sum + (order.total * 0.2), 0);
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-background">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <img 
-            src={kokoKingLogo} 
-            alt="Koko King" 
-            className="h-12 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => navigate("/")}
-          />
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/driver/profile")}
-            >
-              <User className="h-4 w-4 mr-2" />
-              Profile
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <img 
+              src={kokoKingLogo} 
+              alt="Koko King" 
+              className="h-10 cursor-pointer" 
+              onClick={() => navigate("/")}
+            />
+            <div>
+              <p className="text-sm font-semibold">{driver.fullName}</p>
+              <p className="text-xs text-muted-foreground">{driver.phone}</p>
+            </div>
           </div>
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Driver Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {driver.fullName || driver.phone}</p>
-        </div>
+      <div className="container px-4 py-6 space-y-6">
+        {/* Online Status Toggle */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="online-toggle" className="text-base font-semibold">
+                    {isOnline ? "You're Online" : "You're Offline"}
+                  </Label>
+                  {isOnline && (
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {isOnline ? "Available for delivery assignments" : "Toggle to start receiving orders"}
+                </p>
+              </div>
+              <Switch
+                id="online-toggle"
+                checked={isOnline}
+                onCheckedChange={handleToggleOnline}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="flex items-center gap-4 p-4 border rounded-lg bg-card">
-          <Switch
-            id="online-status"
-            checked={isOnline}
-            onCheckedChange={toggleOnlineStatus}
-          />
-          <Label htmlFor="online-status" className="cursor-pointer">
-            {isOnline ? (
-              <span className="text-green-600 font-semibold">🟢 Online - Accepting Orders</span>
-            ) : (
-              <span className="text-muted-foreground">🔴 Offline</span>
-            )}
-          </Label>
-        </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{pendingOrders.length}</div>
@@ -253,208 +263,212 @@ const DriverDashboard = () => {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Ongoing Deliveries</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Ongoing</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{ongoingOrders.length}</div>
+              <div className="text-2xl font-bold">{ongoingDeliveries.length}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{completedOrders.length}</div>
+              <div className="text-2xl font-bold">{completedDeliveries.length}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Earnings</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">₵{totalEarnings.toFixed(2)}</div>
+              <div className="text-2xl font-bold">₵{totalEarnings.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
-            <TabsTrigger value="ongoing">Ongoing ({ongoingOrders.length})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({completedOrders.length})</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pending" className="space-y-4 mt-4">
-            {pendingOrders.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  No pending orders. Turn online to receive orders!
-                </CardContent>
-              </Card>
-            ) : (
-              pendingOrders.map((order) => (
-                <Card key={order.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-base">Order #{order.id.slice(0, 8)}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {order.customerName || "Customer"}
-                        </p>
-                      </div>
-                      <Badge variant="secondary">₵{order.total.toFixed(2)}</Badge>
+        {/* Pending Orders - Need Acceptance */}
+        {pendingOrders.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-500" />
+              <h2 className="text-xl font-bold">New Delivery Requests</h2>
+              <Badge variant="destructive">{pendingOrders.length}</Badge>
+            </div>
+            {pendingOrders.map((order) => (
+              <Card key={order.id} className="border-orange-500/50">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">Order #{order.id}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {new Date(order.timestamp).toLocaleTimeString()}
+                      </p>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
+                    <Badge variant="outline" className="bg-orange-500/10 text-orange-500">
+                      Awaiting Response
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3">
                     <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 mt-1 text-muted-foreground" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Delivery Address</p>
-                        <p className="text-sm text-muted-foreground">{order.deliveryAddress || "No address"}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openMap(order.deliveryAddress)}
-                      >
-                        <Navigation className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{order.items?.length || 0} items</span>
-                    </div>
-
-                    <Button 
-                      className="w-full" 
-                      onClick={() => handleAcceptOrder(order.id)}
-                      disabled={!isOnline}
-                    >
-                      Accept Order
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
-
-          <TabsContent value="ongoing" className="space-y-4 mt-4">
-            {ongoingOrders.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  No ongoing deliveries
-                </CardContent>
-              </Card>
-            ) : (
-              ongoingOrders.map((order) => (
-                <Card key={order.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-base">Order #{order.id.slice(0, 8)}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {order.customerName || "Customer"}
-                        </p>
-                      </div>
-                      <Badge className="bg-purple-500">
-                        {order.status === "assigned-to-driver" ? "Assigned" : "Out for Delivery"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 mt-1 text-muted-foreground" />
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
                       <div className="flex-1">
                         <p className="text-sm font-medium">Delivery Address</p>
                         <p className="text-sm text-muted-foreground">{order.deliveryAddress}</p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openMap(order.deliveryAddress)}
-                      >
-                        <Navigation className="h-4 w-4" />
-                      </Button>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a href={`tel:${order.customerPhone}`} className="text-sm text-primary">
-                        {order.customerPhone || "N/A"}
-                      </a>
+                      <p className="text-sm">{order.customerInfo?.phone || 'N/A'}</p>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <Package className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">₵{order.total.toFixed(2)}</span>
+                      <p className="text-sm">{order.items?.length || 0} items</p>
                     </div>
-
-                    <div className="flex gap-2">
-                      {order.status === "assigned-to-driver" && (
-                        <Button 
-                          className="flex-1" 
-                          onClick={() => handleMarkPickedUp(order.id)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Picked Up
-                        </Button>
-                      )}
-                      {order.status === "out-for-delivery" && (
-                        <Button 
-                          className="flex-1" 
-                          onClick={() => handleMarkDelivered(order.id)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Delivered
-                        </Button>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm font-semibold">₵{order.total.toFixed(2)}</p>
+                      <span className="text-xs text-muted-foreground">(Your commission: ₵{(order.total * 0.2).toFixed(2)})</span>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
+                  </div>
 
-          <TabsContent value="completed" className="space-y-4 mt-4">
-            {completedOrders.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  No completed deliveries yet
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => handleAcceptOrder(order.id)}
+                      className="flex-1"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Accept Delivery
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => openMap(order.deliveryAddress)}
+                    >
+                      <Navigation className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              completedOrders.map((order) => (
-                <Card key={order.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-base">Order #{order.id.slice(0, 8)}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {new Date(order.deliveredAt).toLocaleDateString()}
-                        </p>
+            ))}
+          </div>
+        )}
+
+        {/* Ongoing Deliveries */}
+        {ongoingDeliveries.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Ongoing Deliveries</h2>
+            {ongoingDeliveries.map((order) => (
+              <Card key={order.id} className="border-blue-500/50">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">Order #{order.id}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {order.deliveryStatus === "accepted" ? "Pick up order" : "Delivering to customer"}
+                      </p>
+                    </div>
+                    <Badge className="bg-blue-500">
+                      {order.deliveryStatus === "accepted" ? "Ready for Pickup" : "On Route"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Delivery Address</p>
+                        <p className="text-sm text-muted-foreground">{order.deliveryAddress}</p>
                       </div>
-                      <Badge className="bg-green-500">Delivered</Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Order Total:</span>
-                      <span className="font-medium">₵{order.total.toFixed(2)}</span>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm">{order.customerInfo?.phone || 'N/A'}</p>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Your Earnings (20%):</span>
-                      <span className="font-semibold text-green-600">₵{(order.total * 0.20).toFixed(2)}</span>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm font-semibold">₵{order.total.toFixed(2)}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
-      </main>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => openMap(order.deliveryAddress)}
+                      className="flex-1"
+                    >
+                      <Navigation className="h-4 w-4 mr-2" />
+                      Open in Maps
+                    </Button>
+                    {order.deliveryStatus === "accepted" ? (
+                      <Button 
+                        onClick={() => handleMarkPickedUp(order.id)}
+                        className="flex-1"
+                      >
+                        <TruckIcon className="h-4 w-4 mr-2" />
+                        Picked Up
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={() => handleMarkDelivered(order.id)}
+                        className="flex-1"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Delivered
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Completed Deliveries */}
+        {completedDeliveries.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Completed Deliveries Today</h2>
+            {completedDeliveries.map((order) => (
+              <Card key={order.id}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">Order #{order.id}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Delivered at {new Date(order.deliveredAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-green-600">+₵{(order.total * 0.2).toFixed(2)}</p>
+                      <Badge variant="outline" className="mt-1">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Completed
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isOnline && pendingOrders.length === 0 && ongoingDeliveries.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <TruckIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">Ready to Start Delivering?</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Toggle the switch above to go online and start receiving delivery requests
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };

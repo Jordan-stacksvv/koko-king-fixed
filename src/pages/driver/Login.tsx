@@ -21,7 +21,12 @@ const DriverLogin = () => {
     const driver = drivers.find((d: any) => d.phone === phone);
     
     if (!driver) {
-      toast.error("Driver not found. Please sign up first.");
+      toast.error("Driver not found. Please check your phone number or apply via signup.");
+      return;
+    }
+
+    if (!driver.approved) {
+      toast.error("Your application is pending approval by the manager.");
       return;
     }
     
@@ -32,7 +37,7 @@ const DriverLogin = () => {
     
     localStorage.setItem("driverAuth", JSON.stringify(driver));
     toast.success("Login successful!");
-    navigate("/driver/deliveries");
+    navigate("/driver/dashboard");
   };
 
   const handleSignup = (e: React.FormEvent) => {
@@ -114,8 +119,8 @@ const DriverLogin = () => {
 
                 <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
                   <p className="font-semibold mb-1 text-muted-foreground">Demo Credentials:</p>
-                  <p className="font-mono">Phone: driver@koko.com</p>
-                  <p className="font-mono">Passkey: driver123</p>
+                  <p className="font-mono">Phone: 0501234567</p>
+                  <p className="font-mono">Passkey: driver2025</p>
                 </div>
               </form>
             </TabsContent>
