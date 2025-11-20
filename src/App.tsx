@@ -44,6 +44,7 @@ import AdminPayments from "./pages/admin/Payments";
 // Kitchen Display
 import KitchenDisplay from "./pages/kitchen/Display";
 import KitchenDone from "./pages/kitchen/Done";
+import ReadyForDelivery from "./pages/kitchen/ReadyForDelivery";
 
 // Driver Routes
 import DriverLogin from "./pages/driver/Login";
@@ -86,6 +87,7 @@ const App = () => (
           <Route path="/kitchen/orders" element={<KitchenOrders />} />
           <Route path="/kitchen/display" element={<KitchenDisplay />} />
           <Route path="/kitchen/done" element={<KitchenDone />} />
+          <Route path="/kitchen/ready" element={<ReadyForDelivery />} />
           <Route path="/kitchen/deliveries" element={<KitchenDeliveries />} />
           <Route path="/kitchen/reports" element={<KitchenReports />} />
           <Route path="/kitchen/settings" element={<KitchenSettings />} />

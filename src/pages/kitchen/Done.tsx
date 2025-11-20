@@ -93,12 +93,29 @@ export default function KitchenDone() {
   };
 
   const broadcastToAllDrivers = () => {
+    // Send broadcast notification to all online drivers
+    const notifications = JSON.parse(localStorage.getItem("driverNotifications") || "[]");
+    onlineDrivers.forEach(driver => {
+      notifications.push({
+        id: `${Date.now()}-${driver.driverId}`,
+        driverId: driver.driverId,
+        orderId: selectedOrder.id,
+        orderNumber: selectedOrder.orderId,
+        type: "broadcast",
+        message: `Urgent: Order ${selectedOrder.orderId} needs delivery - First to accept gets it!`,
+        timestamp: new Date().toISOString(),
+        read: false
+      });
+    });
+    localStorage.setItem("driverNotifications", JSON.stringify(notifications));
+    
     toast.success(`Order broadcasted to ${onlineDrivers.length} drivers`);
-    // In real implementation, this would send notifications to all drivers
   };
 
   const assignOrderToDriver = (driver: any) => {
-    const updatedOrders = orders.map((order) =>
+    // Update all orders in localStorage
+    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const finalOrders = allOrders.map((order: any) =>
       order.id === selectedOrder.id
         ? {
             ...order,
@@ -110,24 +127,35 @@ export default function KitchenDone() {
           }
         : order
     );
-
-    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-    const finalOrders = allOrders.map((order: any) =>
-      order.id === selectedOrder.id ? updatedOrders.find((o) => o.id === selectedOrder.id) : order
-    );
-
+    
     localStorage.setItem("orders", JSON.stringify(finalOrders));
-    setOrders(updatedOrders);
-
-    // Update driver status
-    const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-    const updatedQueue = driverQueue.map((d: any) =>
-      d.driverId === driver.driverId ? { ...d, currentDelivery: selectedOrder.id, status: "on-delivery" } : d
+    
+    // Update driver queue
+    const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+    const updatedQueue = queue.map((d: any) =>
+      d.driverId === driver.driverId
+        ? { ...d, currentDelivery: selectedOrder.id }
+        : d
     );
     localStorage.setItem("driverQueue", JSON.stringify(updatedQueue));
-
-    toast.success(`Order ${selectedOrder.orderId} assigned to ${driver.name}`);
+    
+    // Create notification for driver
+    const notifications = JSON.parse(localStorage.getItem("driverNotifications") || "[]");
+    notifications.push({
+      id: Date.now().toString(),
+      driverId: driver.driverId,
+      orderId: selectedOrder.id,
+      orderNumber: selectedOrder.orderId,
+      type: "assignment",
+      message: `New delivery assignment: Order ${selectedOrder.orderId}`,
+      timestamp: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem("driverNotifications", JSON.stringify(notifications));
+    
+    loadData();
     setShowAssignDialog(false);
+    toast.success(`Order assigned to ${driver.name} - Notification sent!`);
   };
 
   const handleManualAssign = (driver: any) => {
@@ -150,22 +178,41 @@ export default function KitchenDone() {
     const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
     const order = allOrders.find((o: any) => o.id === orderId);
     
-    // If driver was assigned, release them back to queue
+    const updatedOrders = allOrders.map((order: any) =>
+      order.id === orderId
+        ? { ...order, status: "cancelled", deliveryStatus: undefined, assignedDriver: undefined, driverName: undefined, driverPhone: undefined }
+        : order
+    );
+    
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+    
+    // Release driver if assigned and notify them
     if (order?.assignedDriver) {
-      const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-      const updatedQueue = driverQueue.map((d: any) =>
-        d.driverId === order.assignedDriver 
-          ? { ...d, currentDelivery: null, status: "online" } 
+      const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+      const updatedQueue = queue.map((d: any) =>
+        d.driverId === order.assignedDriver
+          ? { ...d, currentDelivery: undefined, status: "online" }
           : d
       );
       localStorage.setItem("driverQueue", JSON.stringify(updatedQueue));
+      
+      // Notify driver of cancellation
+      const notifications = JSON.parse(localStorage.getItem("driverNotifications") || "[]");
+      notifications.push({
+        id: Date.now().toString(),
+        driverId: order.assignedDriver,
+        orderId: order.id,
+        orderNumber: order.orderId,
+        type: "cancellation",
+        message: `Order ${order.orderId} has been cancelled`,
+        timestamp: new Date().toISOString(),
+        read: false
+      });
+      localStorage.setItem("driverNotifications", JSON.stringify(notifications));
     }
     
-    // Remove order
-    const updated = allOrders.filter((o: any) => o.id !== orderId);
-    localStorage.setItem("orders", JSON.stringify(updated));
     loadData();
-    toast.success("Order cancelled successfully");
+    toast.success("Order cancelled and all parties notified");
   };
 
   const getDeliveryStatusBadge = (status: string) => {
