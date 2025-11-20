@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
+import { ManagerLayout } from "@/components/manager/ManagerLayout";
 import { DollarSign, ShoppingBag, Clock, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -51,7 +51,7 @@ const Dashboard = () => {
   };
 
   return (
-    <KitchenLayout>
+    <ManagerLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
@@ -137,7 +137,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </KitchenLayout>
+    </ManagerLayout>
   );
 };
 

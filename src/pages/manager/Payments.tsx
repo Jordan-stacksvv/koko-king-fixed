@@ -1,4 +1,4 @@
-import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
+import { ManagerLayout } from "@/components/manager/ManagerLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,7 +37,7 @@ const Payments = () => {
   };
 
   return (
-    <KitchenLayout>
+    <ManagerLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Payments & Transactions</h1>
@@ -140,7 +140,7 @@ const Payments = () => {
           </CardContent>
         </Card>
       </div>
-    </KitchenLayout>
+    </ManagerLayout>
   );
 };
 

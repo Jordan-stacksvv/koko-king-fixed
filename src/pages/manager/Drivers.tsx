@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
+import { ManagerLayout } from "@/components/manager/ManagerLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,7 +88,7 @@ const ManagerDrivers = () => {
   };
 
   return (
-    <KitchenLayout>
+    <ManagerLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -275,7 +275,7 @@ const ManagerDrivers = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </KitchenLayout>
+    </ManagerLayout>
   );
 };
 

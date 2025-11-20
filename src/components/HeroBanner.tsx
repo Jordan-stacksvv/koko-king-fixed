@@ -14,20 +14,34 @@ const banners = [banner1, banner2, banner3, banner4, banner5, banner6, banner7, 
 
 export const HeroBanner = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [customBanners, setCustomBanners] = useState<string[]>([]);
+
+  // Load custom banners from localStorage
+  useEffect(() => {
+    const savedBanners = localStorage.getItem("customBannerImages");
+    if (savedBanners) {
+      const parsed = JSON.parse(savedBanners);
+      if (parsed.length > 0) {
+        setCustomBanners(parsed);
+      }
+    }
+  }, []);
+
+  const displayBanners = customBanners.length > 0 ? customBanners : banners;
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % banners.length);
+      setCurrentSlide((prev) => (prev + 1) % displayBanners.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [displayBanners.length]);
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % banners.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % displayBanners.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + displayBanners.length) % displayBanners.length);
 
   return (
     <section className="relative w-full h-[250px] md:h-[320px] lg:h-[380px] overflow-hidden bg-black">
-      {banners.map((banner, index) => (
+      {displayBanners.map((banner, index) => (
         <div
           key={index}
           className={`absolute inset-0 transition-opacity duration-500 ${
@@ -61,7 +75,7 @@ export const HeroBanner = () => {
       </Button>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-        {banners.map((_, index) => (
+        {displayBanners.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
+import { ManagerLayout } from "@/components/manager/ManagerLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +52,7 @@ const MenuManagement = () => {
   };
 
   return (
-    <KitchenLayout>
+    <ManagerLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -214,7 +214,7 @@ const MenuManagement = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </KitchenLayout>
+    </ManagerLayout>
   );
 };
 

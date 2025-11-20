@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
+import { ManagerLayout } from "@/components/manager/ManagerLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -53,7 +53,7 @@ const Orders = () => {
   };
 
   return (
-    <KitchenLayout>
+    <ManagerLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Orders Management</h1>
@@ -221,7 +221,7 @@ const Orders = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </KitchenLayout>
+    </ManagerLayout>
   );
 };
 
