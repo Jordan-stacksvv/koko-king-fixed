@@ -4,9 +4,13 @@ import { ManagerLayout } from "@/components/manager/ManagerLayout";
 import { DollarSign, ShoppingBag, Clock, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useBranchData } from "@/hooks/useBranchData";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { getManagerBranch } = useBranchData();
+  const managerBranch = getManagerBranch();
+  
   const [stats, setStats] = useState({
     totalOrders: 0,
     pendingOrders: 0,
@@ -15,10 +19,17 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
+    if (!managerBranch) return;
+    
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
     const today = new Date().toDateString();
     
-    const todayOrders = orders.filter((order: any) => 
+    // Filter orders for manager's branch only
+    const branchOrders = orders.filter((order: any) => 
+      order.branch === managerBranch.name || order.branchId === managerBranch.id
+    );
+    
+    const todayOrders = branchOrders.filter((order: any) => 
       new Date(order.timestamp).toDateString() === today
     );
 
@@ -28,7 +39,7 @@ const Dashboard = () => {
       completedToday: todayOrders.filter((o: any) => o.status === "completed").length,
       todayRevenue: todayOrders.reduce((sum: number, order: any) => sum + order.total, 0),
     });
-  }, []);
+  }, [managerBranch]);
 
   const statsData = [
     { title: "Total Orders Today", value: stats.totalOrders, icon: ShoppingBag, color: "text-blue-500" },
@@ -38,7 +49,15 @@ const Dashboard = () => {
   ];
 
   const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-  const recentOrders = orders.slice(-5).reverse();
+  
+  // Filter orders for manager's branch only
+  const branchOrders = managerBranch 
+    ? orders.filter((order: any) => 
+        order.branch === managerBranch.name || order.branchId === managerBranch.id
+      )
+    : [];
+  
+  const recentOrders = branchOrders.slice(-5).reverse();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -54,8 +73,12 @@ const Dashboard = () => {
     <ManagerLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening today</p>
+          <h1 className="text-3xl font-bold">Manager Dashboard</h1>
+          {managerBranch ? (
+            <p className="text-muted-foreground">Managing: {managerBranch.name}</p>
+          ) : (
+            <p className="text-muted-foreground">Welcome back! Here's what's happening today</p>
+          )}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

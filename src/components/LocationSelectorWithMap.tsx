@@ -1,6 +1,6 @@
 import { Restaurant } from "@/data/menuItems";
 import { MapPin, Edit2, Navigation } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { getAccurateLocation, findNearestRestaurant } from "@/lib/geolocation";
 import { toast } from "sonner";
 import { MapLocationPicker } from "./MapLocationPicker";
+import { useBranchData } from "@/hooks/useBranchData";
 
 interface LocationSelectorProps {
   selectedRestaurant: Restaurant;
@@ -23,10 +24,16 @@ export const LocationSelectorWithMap = ({
   restaurants,
   onRestaurantChange,
 }: LocationSelectorProps) => {
+  const { loadBranches } = useBranchData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("Your current location");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Sync with latest branch data
+  useEffect(() => {
+    loadBranches();
+  }, [loadBranches]);
 
   const handleUseCurrentLocation = async () => {
     setIsDetectingLocation(true);

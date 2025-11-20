@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { ManagerLayout } from "@/components/manager/ManagerLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +8,38 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { DeliveryPricingSettings } from "@/components/DeliveryPricingSettings";
 import { toast } from "sonner";
+import { useBranchData } from "@/hooks/useBranchData";
 
 const Settings = () => {
+  const { getManagerBranch, updateBranch } = useBranchData();
+  const managerBranch = getManagerBranch();
+  
+  const [branchInfo, setBranchInfo] = useState({
+    name: "",
+    phone: "",
+    location: "",
+    manager: ""
+  });
+
+  useEffect(() => {
+    if (managerBranch) {
+      setBranchInfo({
+        name: managerBranch.name,
+        phone: managerBranch.phone,
+        location: managerBranch.location,
+        manager: managerBranch.manager
+      });
+    }
+  }, [managerBranch]);
+
   const handleSave = () => {
-    toast.success("Settings saved successfully!");
+    if (!managerBranch) {
+      toast.error("Branch not found");
+      return;
+    }
+    
+    updateBranch(managerBranch.id, branchInfo);
+    toast.success("Branch settings saved successfully!");
   };
 
   return (
@@ -23,26 +52,44 @@ const Settings = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Restaurant Information</CardTitle>
+            <CardTitle>Branch Information</CardTitle>
+            {managerBranch && (
+              <p className="text-sm text-muted-foreground">
+                Managing: {managerBranch.name}
+              </p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Restaurant Name</Label>
-                <Input defaultValue="Koko King" />
+                <Label>Branch Name</Label>
+                <Input 
+                  value={branchInfo.name}
+                  onChange={(e) => setBranchInfo({...branchInfo, name: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Phone Number</Label>
-                <Input defaultValue="+233 257 962 987" />
+                <Input 
+                  value={branchInfo.phone}
+                  onChange={(e) => setBranchInfo({...branchInfo, phone: e.target.value})}
+                />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Address</Label>
-              <Textarea defaultValue="Multiple locations across Accra, Ghana" rows={2} />
+              <Label>Branch Address</Label>
+              <Textarea 
+                value={branchInfo.location}
+                onChange={(e) => setBranchInfo({...branchInfo, location: e.target.value})}
+                rows={2} 
+              />
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
-              <Input defaultValue="hello@kokoking.com" />
+              <Label>Branch Manager</Label>
+              <Input 
+                value={branchInfo.manager}
+                onChange={(e) => setBranchInfo({...branchInfo, manager: e.target.value})}
+              />
             </div>
           </CardContent>
         </Card>

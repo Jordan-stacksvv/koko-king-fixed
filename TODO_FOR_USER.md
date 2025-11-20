@@ -4,6 +4,34 @@ This document outlines features and integrations that require manual setup, exte
 
 ---
 
+## ⚠️ IMPORTANT: Data Linking & System Architecture
+
+**See `SYSTEM_DATA_FLOW.md` for complete details on how data flows through the system.**
+
+### Branch Management System ✅ COMPLETED
+- Centralized branch management via `useBranchData` hook
+- Manager authentication now includes branch ID assignment
+- Manager operations automatically scoped to their assigned branch
+- Admin changes propagate to all pages via storage events
+- Cross-tab synchronization implemented
+
+### What Works Now:
+- ✅ Admin can add/edit/delete branches - changes update everywhere
+- ✅ Manager login requires branch selection
+- ✅ Manager dashboard shows only their branch's data
+- ✅ Manager settings edit only their branch information
+- ✅ Branch updates sync across all components automatically
+- ✅ No incorrect redirects to manager login pages
+
+### Implementation Notes:
+- All manager pages filter data by `managerBranch.id`
+- Orders should include both `branch` name and `branchId` for compatibility
+- Menu items and drivers should be tagged with `branchId`
+- Restaurant selector syncs with branch data
+- Geolocation consent dialog added for distance-based delivery pricing
+
+---
+
 ## 🔐 1. Google Maps API Integration
 
 **Status:** Required for production  
