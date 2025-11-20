@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Bike, Clock, CheckCircle2, Radio, User, MapPin, Phone, Package } from "lucide-react";
+import { Bike, Clock, CheckCircle2, Radio, User, MapPin, Phone, Package, XCircle, Navigation } from "lucide-react";
 import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 import { toast } from "sonner";
 
@@ -146,6 +146,28 @@ export default function KitchenDone() {
     toast.success("Order marked as completed for pickup");
   };
 
+  const handleCancelOrder = (orderId: string) => {
+    const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const order = allOrders.find((o: any) => o.id === orderId);
+    
+    // If driver was assigned, release them back to queue
+    if (order?.assignedDriver) {
+      const driverQueue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
+      const updatedQueue = driverQueue.map((d: any) =>
+        d.driverId === order.assignedDriver 
+          ? { ...d, currentDelivery: null, status: "online" } 
+          : d
+      );
+      localStorage.setItem("driverQueue", JSON.stringify(updatedQueue));
+    }
+    
+    // Remove order
+    const updated = allOrders.filter((o: any) => o.id !== orderId);
+    localStorage.setItem("orders", JSON.stringify(updated));
+    loadData();
+    toast.success("Order cancelled successfully");
+  };
+
   const getDeliveryStatusBadge = (status: string) => {
     const statusConfig = {
       "pending-approval": { label: "Pending Approval", variant: "secondary" as const, icon: Clock },
@@ -236,13 +258,19 @@ export default function KitchenDone() {
                   </div>
 
                   {order.driverName && (
-                    <div className="bg-muted p-3 rounded-lg">
+                    <div className="bg-muted p-3 rounded-lg space-y-2">
                       <p className="text-sm font-medium mb-1">Assigned Driver:</p>
                       <div className="flex items-center gap-2">
                         <Bike className="h-4 w-4" />
                         <span className="text-sm">{order.driverName}</span>
                         <span className="text-sm text-muted-foreground">• {order.driverPhone}</span>
                       </div>
+                      {order.driverLocation && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Navigation className="h-4 w-4" />
+                          <span>Location: {order.driverLocation.lat?.toFixed(4)}, {order.driverLocation.lng?.toFixed(4)}</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -257,17 +285,29 @@ export default function KitchenDone() {
                     </Button>
                   )}
                   
-                  {(order.deliveryMethod === "pickup" || order.orderType === "walk-in") && !order.deliveryStatus && (
+                  <div className="flex gap-2">
+                    {(order.deliveryMethod === "pickup" || order.orderType === "walk-in") && !order.deliveryStatus && (
+                      <Button
+                        onClick={() => handleCompleteOrder(order.id)}
+                        className="flex-1"
+                        size="lg"
+                        variant="default"
+                      >
+                        <CheckCircle2 className="mr-2 h-5 w-5" />
+                        Mark as Completed
+                      </Button>
+                    )}
+                    
                     <Button
-                      onClick={() => handleCompleteOrder(order.id)}
-                      className="w-full"
+                      onClick={() => handleCancelOrder(order.id)}
+                      className="flex-1"
                       size="lg"
-                      variant="default"
+                      variant="destructive"
                     >
-                      <CheckCircle2 className="mr-2 h-5 w-5" />
-                      Mark as Completed
+                      <XCircle className="mr-2 h-5 w-5" />
+                      Cancel Order
                     </Button>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             ))
