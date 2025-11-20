@@ -53,6 +53,9 @@ import DriverProfile from "./pages/driver/Profile";
 import DriverDeliveries from "./pages/driver/Deliveries";
 import AdminDrivers from "./pages/admin/Drivers";
 
+// Order Tracking
+import OrderTracking from "./pages/OrderTracking";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,6 +75,7 @@ const App = () => (
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/store-locator" element={<StoreLocator />} />
+          <Route path="/track-order" element={<OrderTracking />} />
           
           {/* Kitchen Routes */}
           <Route path="/kitchen/login" element={<KitchenLogin />} />

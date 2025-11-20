@@ -65,8 +65,12 @@ const Checkout = () => {
     localStorage.removeItem("cart");
     window.dispatchEvent(new Event("cartUpdated"));
 
-    toast.success("Order placed successfully!");
-    navigate("/");
+    toast.success("Order placed successfully! Redirecting to track your order...");
+    
+    // Redirect to order tracking page
+    setTimeout(() => {
+      navigate(`/track-order?orderId=${order.id}`);
+    }, 1500);
   };
 
   if (cart.length === 0) {
