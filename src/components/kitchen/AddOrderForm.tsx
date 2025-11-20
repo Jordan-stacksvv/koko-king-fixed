@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { menuItems } from "@/data/menuItems";
 import { MenuItemDialog } from "./MenuItemDialog";
 
-export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
+export const AddOrderForm = ({ onClose, onOrderCreated }: { onClose: () => void; onOrderCreated?: () => void }) => {
   const [customer, setCustomer] = useState({
     name: "",
     phone: "",
@@ -84,13 +84,16 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
     const newOrder = {
       id: `KK-${Math.floor(1000 + Math.random() * 9000)}`,
       customer,
+      customerName: customer.name,
+      customerPhone: customer.phone,
       items: selectedItems,
       total,
-      status: "pending",
+      status: "confirmed", // Auto-confirm walk-in orders
       orderType: "walk-in",
       timestamp: new Date().toISOString(),
       deliveryMethod,
       deliveryAddress: deliveryMethod === "delivery" ? customer.address : null,
+      priority: true, // Walk-in orders get priority
     };
 
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
@@ -98,6 +101,7 @@ export const AddOrderForm = ({ onClose }: { onClose: () => void }) => {
     localStorage.setItem("orders", JSON.stringify(orders));
 
     toast.success("Walk-in order added!");
+    onOrderCreated?.(); // Call the callback to reload orders
     onClose();
   };
 
