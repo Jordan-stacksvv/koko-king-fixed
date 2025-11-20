@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { DeliveryPricingSettings } from "@/components/DeliveryPricingSettings";
 import { toast } from "sonner";
 
 const Settings = () => {
@@ -61,20 +62,16 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        <DeliveryPricingSettings />
+
         <Card>
           <CardHeader>
             <CardTitle>Delivery Settings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Delivery Fee</Label>
-                <Input type="number" defaultValue="5.00" step="0.01" />
-              </div>
-              <div className="space-y-2">
-                <Label>Estimated Delivery Time (mins)</Label>
-                <Input type="number" defaultValue="30" />
-              </div>
+            <div className="space-y-2">
+              <Label>Estimated Delivery Time (mins)</Label>
+              <Input type="number" defaultValue="30" />
             </div>
           </CardContent>
         </Card>

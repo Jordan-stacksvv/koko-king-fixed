@@ -9,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { MapPin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MapLocationPicker } from "@/components/MapLocationPicker";
+import { calculateDistance } from "@/lib/geolocation";
 import { toast } from "sonner";
 
 const Checkout = () => {
@@ -16,6 +20,8 @@ const Checkout = () => {
   const [selectedRestaurant, setSelectedRestaurant] = useState(restaurants[0]);
   const [deliveryMethod, setDeliveryMethod] = useState<"delivery" | "pickup">("delivery");
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
+  const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -27,8 +33,12 @@ const Checkout = () => {
   // Sync selected location address to delivery address
   useEffect(() => {
     const selectedLocation = localStorage.getItem("selectedLocation");
+    const savedCoords = localStorage.getItem("deliveryCoords");
     if (selectedLocation && deliveryMethod === "delivery") {
       setFormData(prev => ({ ...prev, address: selectedLocation }));
+    }
+    if (savedCoords) {
+      setDeliveryCoords(JSON.parse(savedCoords));
     }
   }, [selectedRestaurant, deliveryMethod]);
 
@@ -38,7 +48,40 @@ const Checkout = () => {
     const extrasPrice = item.extras?.reduce((extraSum: number, extra: any) => extraSum + extra.price, 0) || 0;
     return sum + (itemPrice + extrasPrice) * item.quantity;
   }, 0);
-  const deliveryFee = deliveryMethod === "delivery" ? 5.00 : 0;
+
+  // Calculate distance-based delivery fee
+  const calculateDeliveryFee = () => {
+    if (deliveryMethod !== "delivery" || !deliveryCoords) return 0;
+
+    const distance = calculateDistance(
+      selectedRestaurant.coordinates.lat,
+      selectedRestaurant.coordinates.lng,
+      deliveryCoords.lat,
+      deliveryCoords.lng
+    );
+
+    // Load pricing tiers from localStorage
+    const pricingTiers = JSON.parse(
+      localStorage.getItem("deliveryPricing") || 
+      '[{"minDistance":0,"maxDistance":3,"price":5},{"minDistance":3,"maxDistance":7,"price":10},{"minDistance":7,"maxDistance":15,"price":15}]'
+    );
+
+    const matchingTier = pricingTiers.find(
+      (tier: any) => distance >= tier.minDistance && distance <= tier.maxDistance
+    );
+
+    return matchingTier?.price || 5.0;
+  };
+
+  const deliveryFee = calculateDeliveryFee();
+  const deliveryDistance = deliveryCoords
+    ? calculateDistance(
+        selectedRestaurant.coordinates.lat,
+        selectedRestaurant.coordinates.lng,
+        deliveryCoords.lat,
+        deliveryCoords.lng
+      )
+    : 0;
   const total = subtotal + deliveryFee;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,6 +97,9 @@ const Checkout = () => {
       deliveryMethod,
       paymentMethod,
       total,
+      deliveryFee,
+      deliveryDistance: deliveryDistance.toFixed(2),
+      customerLocation: deliveryCoords,
       status: "pending",
       orderType: "online",
       branch: selectedRestaurant.name,
@@ -80,6 +126,20 @@ const Checkout = () => {
     setTimeout(() => {
       navigate(`/track-order?orderId=${order.id}`);
     }, 1500);
+  };
+
+  const handleLocationSelect = (location: {
+    address: string;
+    lat: number;
+    lng: number;
+    nearestRestaurant: any;
+  }) => {
+    setFormData({ ...formData, address: location.address });
+    setDeliveryCoords({ lat: location.lat, lng: location.lng });
+    localStorage.setItem("selectedLocation", location.address);
+    localStorage.setItem("deliveryCoords", JSON.stringify({ lat: location.lat, lng: location.lng }));
+    setIsLocationDialogOpen(false);
+    toast.success("Delivery location updated!");
   };
 
   if (cart.length === 0) {
@@ -112,9 +172,15 @@ const Checkout = () => {
                     <RadioGroupItem value="delivery" id="delivery" />
                     <Label htmlFor="delivery" className="flex-1 cursor-pointer">
                       <div className="font-semibold">Delivery</div>
-                      <div className="text-sm text-muted-foreground">Get it delivered to your doorstep</div>
+                      <div className="text-sm text-muted-foreground">
+                        {deliveryDistance > 0
+                          ? `Get it delivered to your doorstep (${deliveryDistance.toFixed(2)} km)`
+                          : "Get it delivered to your doorstep"}
+                      </div>
                     </Label>
-                    <span className="font-semibold">₵5.00</span>
+                    <span className="font-semibold">
+                      {deliveryFee > 0 ? `₵${deliveryFee.toFixed(2)}` : "₵5.00"}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
                     <RadioGroupItem value="pickup" id="pickup" />
@@ -165,13 +231,30 @@ const Checkout = () => {
                 {deliveryMethod === "delivery" && (
                   <div className="space-y-2">
                     <Label htmlFor="address">Delivery Address</Label>
-                    <Textarea
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      required
-                      rows={3}
-                    />
+                    <div className="relative">
+                      <Textarea
+                        id="address"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        required
+                        rows={3}
+                        className="pr-12"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsLocationDialogOpen(true)}
+                        className="absolute top-2 right-2"
+                      >
+                        <MapPin className="h-5 w-5 text-primary" />
+                      </Button>
+                    </div>
+                    {deliveryDistance > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Distance: {deliveryDistance.toFixed(2)} km from {selectedRestaurant.name}
+                      </p>
+                    )}
                   </div>
                 )}
                 <div className="space-y-2">
@@ -257,6 +340,18 @@ const Checkout = () => {
           </div>
         </form>
       </div>
+
+      <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select Delivery Location</DialogTitle>
+          </DialogHeader>
+          <MapLocationPicker
+            onLocationSelect={handleLocationSelect}
+            restaurants={restaurants}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
