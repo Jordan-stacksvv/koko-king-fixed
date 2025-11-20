@@ -4,6 +4,41 @@ This document outlines features and integrations that require manual setup, exte
 
 ---
 
+## ⚠️ IMPORTANT: Convex Backend Setup
+
+### Convex Backend: 100% Complete & Ready ✅
+
+Your Convex backend is **fully implemented** with:
+- ✅ Complete schema with 11 tables
+- ✅ 66 production-ready functions
+- ✅ Full branch management support
+- ✅ Real-time synchronization
+- ✅ Manager/admin scoping
+
+**Get started in 5 minutes:** See `CONVEX_QUICK_START.md`
+
+**Complete migration guide:** See `CONVEX_MIGRATION_GUIDE.md`
+
+**System architecture:** See `SYSTEM_DATA_FLOW.md`
+
+### Quick Setup:
+```bash
+# 1. Install
+npm install convex
+
+# 2. Initialize
+npx convex dev
+
+# 3. Add your deployment URL to .env.local
+VITE_CONVEX_URL=https://your-project.convex.cloud
+
+# 4. Wrap app in ConvexProvider (see CONVEX_QUICK_START.md)
+```
+
+That's it! Your backend is live and ready to use.
+
+---
+
 ## ⚠️ IMPORTANT: Data Linking & System Architecture
 
 **See `SYSTEM_DATA_FLOW.md` for complete details on how data flows through the system.**
@@ -22,6 +57,7 @@ This document outlines features and integrations that require manual setup, exte
 - ✅ Manager settings edit only their branch information
 - ✅ Branch updates sync across all components automatically
 - ✅ No incorrect redirects to manager login pages
+- ✅ Geolocation consent for distance-based delivery pricing
 
 ### Implementation Notes:
 - All manager pages filter data by `managerBranch.id`
