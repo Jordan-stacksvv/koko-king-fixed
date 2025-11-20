@@ -19,6 +19,7 @@ const Checkout = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    email: "",
     address: "",
     notes: "",
   });
@@ -47,6 +48,9 @@ const Checkout = () => {
       id: `KK-${Math.floor(1000 + Math.random() * 9000)}`,
       items: cart,
       customer: formData,
+      customerPhone: formData.phone,
+      customerEmail: formData.email || "",
+      deliveryAddress: formData.address,
       deliveryMethod,
       paymentMethod,
       total,
@@ -54,12 +58,17 @@ const Checkout = () => {
       orderType: "online",
       branch: selectedRestaurant.name,
       timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
 
     // Store order in localStorage
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
     orders.push(order);
     localStorage.setItem("orders", JSON.stringify(orders));
+
+    // Save customer info for order tracking
+    if (formData.phone) localStorage.setItem("customerPhone", formData.phone);
+    if (formData.email) localStorage.setItem("customerEmail", formData.email);
 
     // Clear cart
     localStorage.removeItem("cart");

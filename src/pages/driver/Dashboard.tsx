@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Clock, MapPin, Package, DollarSign, LogOut, CheckCircle, Navigation, Phone, TruckIcon, AlertCircle } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Clock, MapPin, Package, LogOut, CheckCircle, Navigation, Phone, TruckIcon, AlertCircle, Settings } from "lucide-react";
 import { toast } from "sonner";
 import kokoKingLogo from "@/assets/koko-king-logo.png";
 import { 
@@ -107,15 +108,17 @@ const DriverDashboard = () => {
         queue.push({
           id: `QUEUE-${Date.now()}`,
           driverId: driver.id,
-          driverName: driver.fullName,
+          name: driver.fullName,
+          phone: driver.phone,
+          branch: driver.branch || "Main Branch",
           status: "online",
           joinedAt: new Date().toISOString(),
-          currentDelivery: null
+          currentDelivery: null,
         });
       }
       localStorage.setItem("driverQueue", JSON.stringify(queue));
       setIsOnline(true);
-      toast.success("You are now online and in the delivery queue!");
+      toast.success("You are now online and ready to receive orders!");
     }
   };
 
@@ -124,15 +127,9 @@ const DriverDashboard = () => {
     const orderIndex = orders.findIndex((o: any) => o.id === orderId);
     
     if (orderIndex !== -1) {
-      // Generate customer location if not exists
-      if (!orders[orderIndex].customerLocation) {
-        orders[orderIndex].customerLocation = generateCustomerLocation();
-      }
-      
       orders[orderIndex].deliveryStatus = "accepted";
-      orders[orderIndex].acceptedAt = new Date().toISOString();
       
-      // Update driver queue
+      // Update driver queue status
       const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
       const driverIndex = queue.findIndex((d: any) => d.driverId === driver.id);
       if (driverIndex !== -1) {
@@ -143,7 +140,20 @@ const DriverDashboard = () => {
       
       localStorage.setItem("orders", JSON.stringify(orders));
       loadOrders(driver);
-      toast.success("Order accepted! Navigate to customer location.");
+      toast.success("Order accepted! Proceed to pickup.");
+    }
+  };
+
+  const handleRejectOrder = (orderId: string) => {
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const orderIndex = orders.findIndex((o: any) => o.id === orderId);
+    
+    if (orderIndex !== -1) {
+      orders[orderIndex].assignedDriver = null;
+      orders[orderIndex].deliveryStatus = "pending-approval";
+      localStorage.setItem("orders", JSON.stringify(orders));
+      loadOrders(driver);
+      toast.info("Order rejected and returned to queue");
     }
   };
 
@@ -153,32 +163,26 @@ const DriverDashboard = () => {
     
     if (orderIndex !== -1) {
       orders[orderIndex].deliveryStatus = "on-route";
-      orders[orderIndex].pickedUpAt = new Date().toISOString();
+      
+      // Generate customer location if not exists
+      if (!orders[orderIndex].customerLocation) {
+        orders[orderIndex].customerLocation = generateCustomerLocation();
+      }
+      
+      // Start GPS tracking simulation
+      const interval = startGPSTracking(
+        driver.id, 
+        orders[orderIndex].customerLocation,
+        () => {
+          // On arrival callback
+          toast.success("You've arrived at the delivery location!");
+        }
+      );
+      gpsIntervalRef.current = interval;
       
       localStorage.setItem("orders", JSON.stringify(orders));
       loadOrders(driver);
-      
-      // Start GPS tracking simulation
-      const customerLocation = orders[orderIndex].customerLocation;
-      if (customerLocation && driver) {
-        // Stop any existing tracking
-        if (gpsIntervalRef.current) {
-          stopGPSTracking(gpsIntervalRef.current);
-        }
-        
-        // Start new tracking
-        gpsIntervalRef.current = startGPSTracking(
-          driver.id,
-          customerLocation,
-          (location) => {
-            console.log("GPS Update:", location);
-          }
-        );
-        
-        toast.success("Order picked up! GPS tracking started. On route to customer.");
-      } else {
-        toast.success("Order picked up! On route to customer.");
-      }
+      toast.success("Order marked as picked up! Navigate to customer.");
     }
   };
 
@@ -200,7 +204,7 @@ const DriverDashboard = () => {
       // Reset driver location to restaurant
       updateDriverLocation(driver.id, getRestaurantLocation());
       
-      // Update driver queue - set back to online
+      // Update driver queue - mark as available
       const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
       const driverIndex = queue.findIndex((d: any) => d.driverId === driver.id);
       if (driverIndex !== -1) {
@@ -208,30 +212,19 @@ const DriverDashboard = () => {
         queue[driverIndex].status = "online";
         localStorage.setItem("driverQueue", JSON.stringify(queue));
       }
-
-      // Update driver earnings (20% commission)
-      const drivers = JSON.parse(localStorage.getItem("drivers") || "[]");
-      const driverDataIndex = drivers.findIndex((d: any) => d.id === driver.id);
-      if (driverDataIndex !== -1) {
-        const commission = orders[orderIndex].total * 0.2;
-        drivers[driverDataIndex].earnings = (drivers[driverDataIndex].earnings || 0) + commission;
-        drivers[driverDataIndex].deliveries = drivers[driverDataIndex].deliveries || [];
-        drivers[driverDataIndex].deliveries.push(orderId);
-        localStorage.setItem("drivers", JSON.stringify(drivers));
-      }
       
       localStorage.setItem("orders", JSON.stringify(orders));
       loadOrders(driver);
-      toast.success("Delivery completed! GPS tracking stopped. You're back in the queue.");
+      toast.success("Delivery completed! Great job!");
     }
   };
 
   const handleLogout = () => {
-    // Set driver offline before logout
+    // Set driver to offline before logging out
     const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
-    const existingIndex = queue.findIndex((d: any) => d.driverId === driver?.id);
-    if (existingIndex !== -1) {
-      queue[existingIndex].status = "offline";
+    const driverIndex = queue.findIndex((d: any) => d.driverId === driver.id);
+    if (driverIndex !== -1) {
+      queue[driverIndex].status = "offline";
       localStorage.setItem("driverQueue", JSON.stringify(queue));
     }
     
@@ -241,286 +234,293 @@ const DriverDashboard = () => {
   };
 
   const openMap = (address: string) => {
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-    window.open(mapsUrl, "_blank");
+    const encodedAddress = encodeURIComponent(address);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, "_blank");
   };
 
-  if (!driver) {
-    return null;
-  }
+  if (!driver) return null;
 
-  const totalEarnings = completedDeliveries.reduce((sum, order) => sum + (order.total * 0.2), 0);
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4">
+    <div className="min-h-screen bg-background pb-20">
+      <header className="sticky top-0 z-10 border-b bg-background">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <img 
+            src={kokoKingLogo} 
+            alt="Koko King" 
+            className="h-12 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate("/")}
+          />
           <div className="flex items-center gap-3">
-            <img 
-              src={kokoKingLogo} 
-              alt="Koko King" 
-              className="h-10 cursor-pointer" 
-              onClick={() => navigate("/")}
-            />
-            <div>
-              <p className="text-sm font-semibold">{driver.fullName}</p>
-              <p className="text-xs text-muted-foreground">{driver.phone}</p>
-            </div>
+            <Avatar 
+              className="h-10 w-10 cursor-pointer border-2 border-primary hover:opacity-80 transition-opacity"
+              onClick={() => navigate("/driver/settings")}
+            >
+              <AvatarImage src={driver.profilePicUrl} alt={driver.fullName} />
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {getInitials(driver.fullName)}
+              </AvatarFallback>
+            </Avatar>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/driver/settings")}
+              title="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
         </div>
       </header>
 
-      <div className="container px-4 py-6 space-y-6">
-        {/* Online Status Toggle */}
-        <Card>
-          <CardContent className="pt-6">
+      <main className="container mx-auto px-4 py-6 max-w-6xl">
+        {/* Driver Status Card */}
+        <Card className="mb-6">
+          <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="online-toggle" className="text-base font-semibold">
-                    {isOnline ? "You're Online" : "You're Offline"}
-                  </Label>
-                  {isOnline && (
-                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {isOnline ? "Available for delivery assignments" : "Toggle to start receiving orders"}
+              <CardTitle className="text-2xl">Welcome, {driver.fullName}!</CardTitle>
+              <Badge variant={isOnline ? "default" : "secondary"} className="text-lg px-4 py-2 bg-green-600 text-white">
+                {isOnline ? "Online" : "Offline"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {isOnline 
+                    ? "You're ready to receive delivery orders" 
+                    : "Switch online to start receiving orders"}
                 </p>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="flex items-center gap-1">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{pendingOrders.length}</span> Pending
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <TruckIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{ongoingDeliveries.length}</span> Ongoing
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{completedDeliveries.length}</span> Completed Today
+                  </span>
+                </div>
               </div>
-              <Switch
-                id="online-toggle"
-                checked={isOnline}
-                onCheckedChange={handleToggleOnline}
-              />
+              <div className="flex items-center gap-3">
+                <Label htmlFor="online-toggle" className="text-base font-medium">
+                  {isOnline ? "Go Offline" : "Go Online"}
+                </Label>
+                <Switch
+                  id="online-toggle"
+                  checked={isOnline}
+                  onCheckedChange={handleToggleOnline}
+                  className="data-[state=checked]:bg-green-500"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pendingOrders.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Ongoing</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{ongoingDeliveries.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{completedDeliveries.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Earnings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₵{totalEarnings.toFixed(2)}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Pending Orders - Need Acceptance */}
+        {/* Pending Orders */}
         {pendingOrders.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-orange-500" />
-              <h2 className="text-xl font-bold">New Delivery Requests</h2>
-              <Badge variant="destructive">{pendingOrders.length}</Badge>
-            </div>
-            {pendingOrders.map((order) => (
-              <Card key={order.id} className="border-orange-500/50">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">Order #{order.id}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {new Date(order.timestamp).toLocaleTimeString()}
-                      </p>
+          <Card className="mb-6 border-orange-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-600">
+                <AlertCircle className="h-5 w-5" />
+                New Orders Awaiting Acceptance ({pendingOrders.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {pendingOrders.map((order) => (
+                <Card key={order.id} className="bg-orange-50 dark:bg-orange-950">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg">Order #{order.id}</h3>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(order.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <Badge className="bg-orange-500 text-white">
+                        ₵{order.total?.toFixed(2)}
+                      </Badge>
                     </div>
-                    <Badge variant="outline" className="bg-orange-500/10 text-orange-500">
-                      Awaiting Response
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-3">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Delivery Address</p>
-                        <p className="text-sm text-muted-foreground">{order.deliveryAddress}</p>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-start gap-2 text-sm">
+                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <span>{order.customer?.address || order.deliveryAddress || "N/A"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{order.customer?.phone || order.customerPhone || "N/A"}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-medium">{order.items?.length || 0} items</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm">{order.customerInfo?.phone || 'N/A'}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm">{order.items?.length || 0} items</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm font-semibold">₵{order.total.toFixed(2)}</p>
-                      <span className="text-xs text-muted-foreground">(Your commission: ₵{(order.total * 0.2).toFixed(2)})</span>
-                    </div>
-                  </div>
 
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={() => handleAcceptOrder(order.id)}
-                      className="flex-1"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Accept Delivery
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => openMap(order.deliveryAddress)}
-                    >
-                      <Navigation className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => handleAcceptOrder(order.id)}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Accept Order
+                      </Button>
+                      <Button 
+                        onClick={() => handleRejectOrder(order.id)}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
         )}
 
         {/* Ongoing Deliveries */}
         {ongoingDeliveries.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Ongoing Deliveries</h2>
-            {ongoingDeliveries.map((order) => (
-              <Card key={order.id} className="border-blue-500/50">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">Order #{order.id}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {order.deliveryStatus === "accepted" ? "Pick up order" : "Delivering to customer"}
-                      </p>
+          <Card className="mb-6 border-blue-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-600">
+                <TruckIcon className="h-5 w-5" />
+                Ongoing Deliveries ({ongoingDeliveries.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {ongoingDeliveries.map((order) => (
+                <Card key={order.id} className="bg-blue-50 dark:bg-blue-950">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg">Order #{order.id}</h3>
+                        <Badge variant="default" className="mt-1">
+                          {order.deliveryStatus === "accepted" ? "Picked Up" : "On Route"}
+                        </Badge>
+                      </div>
+                      <Badge className="bg-blue-600 text-white">
+                        ₵{order.total?.toFixed(2)}
+                      </Badge>
                     </div>
-                    <Badge className="bg-blue-500">
-                      {order.deliveryStatus === "accepted" ? "Ready for Pickup" : "On Route"}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-3">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Delivery Address</p>
-                        <p className="text-sm text-muted-foreground">{order.deliveryAddress}</p>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-start gap-2 text-sm">
+                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <span>{order.customer?.address || order.deliveryAddress || "N/A"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{order.customer?.phone || order.customerPhone || "N/A"}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm">{order.customerInfo?.phone || 'N/A'}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm font-semibold">₵{order.total.toFixed(2)}</p>
-                    </div>
-                  </div>
 
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline"
-                      onClick={() => openMap(order.deliveryAddress)}
-                      className="flex-1"
-                    >
-                      <Navigation className="h-4 w-4 mr-2" />
-                      Open in Maps
-                    </Button>
-                    {order.deliveryStatus === "accepted" ? (
-                      <Button 
-                        onClick={() => handleMarkPickedUp(order.id)}
-                        className="flex-1"
-                      >
-                        <TruckIcon className="h-4 w-4 mr-2" />
-                        Picked Up
-                      </Button>
-                    ) : (
-                      <Button 
-                        onClick={() => handleMarkDelivered(order.id)}
-                        className="flex-1"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Delivered
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex gap-2">
+                      {order.deliveryStatus === "accepted" ? (
+                        <>
+                          <Button 
+                            onClick={() => handleMarkPickedUp(order.id)}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Navigation className="h-4 w-4 mr-2" />
+                            Start Delivery
+                          </Button>
+                          <Button 
+                            onClick={() => openMap(order.customer?.address || order.deliveryAddress)}
+                            variant="outline"
+                          >
+                            <MapPin className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button 
+                            onClick={() => handleMarkDelivered(order.id)}
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Mark as Delivered
+                          </Button>
+                          <Button 
+                            onClick={() => openMap(order.customer?.address || order.deliveryAddress)}
+                            variant="outline"
+                          >
+                            <MapPin className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
         )}
 
         {/* Completed Deliveries */}
         {completedDeliveries.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Completed Deliveries Today</h2>
-            {completedDeliveries.map((order) => (
-              <Card key={order.id}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">Order #{order.id}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Delivered at {new Date(order.deliveredAt).toLocaleTimeString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600">+₵{(order.total * 0.2).toFixed(2)}</p>
-                      <Badge variant="outline" className="mt-1">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Completed
-                      </Badge>
-                    </div>
+          <Card className="border-green-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-600">
+                <CheckCircle className="h-5 w-5" />
+                Completed Today ({completedDeliveries.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {completedDeliveries.map((order) => (
+                <div key={order.id} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                  <div>
+                    <p className="font-medium">Order #{order.id}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Delivered at {new Date(order.deliveredAt).toLocaleTimeString()}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <Badge className="bg-green-600 text-white">
+                    ₵{order.total?.toFixed(2)}
+                  </Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         )}
 
         {/* Empty State */}
-        {!isOnline && pendingOrders.length === 0 && ongoingDeliveries.length === 0 && (
+        {pendingOrders.length === 0 && ongoingDeliveries.length === 0 && completedDeliveries.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center">
-              <TruckIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">Ready to Start Delivering?</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Toggle the switch above to go online and start receiving delivery requests
+              <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No Orders Yet</h3>
+              <p className="text-muted-foreground">
+                {isOnline 
+                  ? "You're online and ready! Orders will appear here." 
+                  : "Switch online to start receiving delivery orders."}
               </p>
             </CardContent>
           </Card>
         )}
-      </div>
+      </main>
     </div>
   );
 };

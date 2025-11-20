@@ -55,6 +55,8 @@ import AdminDrivers from "./pages/admin/Drivers";
 
 // Order Tracking
 import OrderTracking from "./pages/OrderTracking";
+import CustomerOrders from "./pages/CustomerOrders";
+import DriverSettings from "./pages/driver/Settings";
 
 import NotFound from "./pages/NotFound";
 
@@ -76,6 +78,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/store-locator" element={<StoreLocator />} />
           <Route path="/track-order" element={<OrderTracking />} />
+          <Route path="/customer-orders" element={<CustomerOrders />} />
           
           {/* Kitchen Routes */}
           <Route path="/kitchen/login" element={<KitchenLogin />} />
@@ -114,6 +117,7 @@ const App = () => (
           <Route path="/driver/signup" element={<DriverSignup />} />
           <Route path="/driver/dashboard" element={<DriverDashboard />} />
           <Route path="/driver/profile" element={<DriverProfile />} />
+          <Route path="/driver/settings" element={<DriverSettings />} />
           <Route path="/driver/deliveries" element={<DriverDeliveries />} />
 
           {/* Admin Driver Management */}

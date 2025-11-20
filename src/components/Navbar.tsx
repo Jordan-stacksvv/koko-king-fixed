@@ -37,6 +37,9 @@ export const Navbar = () => {
             <Link to="/menu" className={`font-medium transition-colors ${isActive("/menu") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
               Menu
             </Link>
+            <Link to="/customer-orders" className={`font-medium transition-colors ${isActive("/customer-orders") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
+              Track Orders
+            </Link>
             <Link to="/store-locator" className={`font-medium transition-colors ${isActive("/store-locator") ? "text-primary" : "text-foreground/70 hover:text-primary"}`}>
               Locations
             </Link>
@@ -90,6 +93,13 @@ export const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     Menu
+                  </Link>
+                  <Link 
+                    to="/customer-orders" 
+                    className={`text-lg font-medium py-2 px-4 rounded-lg transition-colors ${isActive("/customer-orders") ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Track Orders
                   </Link>
                   <Link 
                     to="/store-locator" 
