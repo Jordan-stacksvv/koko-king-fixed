@@ -1,18 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
-import { MapPin, Navigation, Search } from "lucide-react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { MapPin, Navigation, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Restaurant } from "@/data/menuItems";
 import { findNearestRestaurant, getAccurateLocation } from "@/lib/geolocation";
 
-const libraries: ("places" | "geometry")[] = ["places", "geometry"];
-
-const mapContainerStyle = {
-  width: "100%",
-  height: "100%",
-};
+// Public Mapbox token (user can replace with their own)
+const MAPBOX_TOKEN = "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw";
 
 const defaultCenter = {
   lat: 5.6037,
@@ -27,86 +24,138 @@ interface MapLocationPickerProps {
     nearestRestaurant: Restaurant;
   }) => void;
   restaurants: Restaurant[];
-  initialCenter?: { lat: number; lng: number };
 }
 
 export const MapLocationPicker = ({
   onLocationSelect,
   restaurants,
-  initialCenter,
 }: MapLocationPickerProps) => {
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8",
-    libraries,
-  });
-
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [center, setCenter] = useState(initialCenter || defaultCenter);
-  const [address, setAddress] = useState("Drag map or search location");
-  const [searchInput, setSearchInput] = useState("");
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const marker = useRef<mapboxgl.Marker | null>(null);
+  
+  const [center, setCenter] = useState(defaultCenter);
+  const [address, setAddress] = useState("Drag map to select location");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const onLoad = useCallback((map: google.maps.Map) => {
-    setMap(map);
-  }, []);
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainer.current) return;
 
-  const onUnmount = useCallback(() => {
-    setMap(null);
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/streets-v12",
+      center: [center.lng, center.lat],
+      zoom: 13,
+    });
+
+    // Add navigation controls
+    map.current.addControl(
+      new mapboxgl.NavigationControl({
+        visualizePitch: false,
+      }),
+      "top-right"
+    );
+
+    // Add center marker
+    marker.current = new mapboxgl.Marker({
+      color: "#e94e1b",
+      draggable: true,
+    })
+      .setLngLat([center.lng, center.lat])
+      .addTo(map.current);
+
+    // Update location when marker is dragged
+    marker.current.on("dragend", () => {
+      const lngLat = marker.current?.getLngLat();
+      if (lngLat) {
+        handleLocationChange(lngLat.lat, lngLat.lng);
+      }
+    });
+
+    // Update location when map is clicked
+    map.current.on("click", (e) => {
+      handleLocationChange(e.lngLat.lat, e.lngLat.lng);
+    });
+
+    // Add restaurant markers
+    restaurants.forEach((restaurant) => {
+      const el = document.createElement("div");
+      el.className = "w-8 h-8 bg-primary rounded-full flex items-center justify-center cursor-pointer shadow-lg";
+      el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
+      
+      new mapboxgl.Marker({ element: el })
+        .setLngLat([restaurant.coordinates.lng, restaurant.coordinates.lat])
+        .setPopup(
+          new mapboxgl.Popup({ offset: 25 })
+            .setHTML(`<strong>${restaurant.name}</strong><br/>${restaurant.address}`)
+        )
+        .addTo(map.current!);
+    });
+
+    return () => {
+      map.current?.remove();
+    };
   }, []);
 
   // Reverse geocode to get address from coordinates
-  const reverseGeocode = useCallback((lat: number, lng: number) => {
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === "OK" && results && results[0]) {
-        setAddress(results[0].formatted_address);
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
+      );
+      const data = await response.json();
+      if (data.features && data.features[0]) {
+        setAddress(data.features[0].place_name);
       } else {
         setAddress(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
       }
-    });
-  }, []);
+    } catch (error) {
+      setAddress(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+    }
+  };
 
-  // Initialize autocomplete
-  useEffect(() => {
-    if (isLoaded && searchInputRef.current && !autocompleteRef.current) {
-      autocompleteRef.current = new google.maps.places.Autocomplete(
-        searchInputRef.current,
-        {
-          componentRestrictions: { country: "gh" }, // Ghana
-          fields: ["formatted_address", "geometry", "name"],
-        }
+  const handleLocationChange = (lat: number, lng: number) => {
+    setCenter({ lat, lng });
+    marker.current?.setLngLat([lng, lat]);
+    map.current?.flyTo({ center: [lng, lat], zoom: 15 });
+    reverseGeocode(lat, lng);
+  };
+
+  // Search location
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast.error("Please enter a location to search");
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          searchQuery
+        )}.json?country=gh&access_token=${MAPBOX_TOKEN}`
       );
+      const data = await response.json();
 
-      autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current?.getPlace();
-        if (place?.geometry?.location) {
-          const newCenter = {
-            lat: place.geometry.location.lat(),
-            lng: place.geometry.location.lng(),
-          };
-          setCenter(newCenter);
-          map?.panTo(newCenter);
-          setAddress(place.formatted_address || "");
-          setSearchInput("");
-        }
-      });
-    }
-  }, [isLoaded, map]);
-
-  // Handle map drag end - reverse geocode new center
-  const handleMapIdle = useCallback(() => {
-    if (map) {
-      const newCenter = map.getCenter();
-      if (newCenter) {
-        const lat = newCenter.lat();
-        const lng = newCenter.lng();
-        setCenter({ lat, lng });
-        reverseGeocode(lat, lng);
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].center;
+        handleLocationChange(lat, lng);
+        setAddress(data.features[0].place_name);
+        toast.success("Location found!");
+      } else {
+        toast.error("Location not found. Try a different search.");
       }
+    } catch (error) {
+      toast.error("Failed to search location");
+    } finally {
+      setIsSearching(false);
     }
-  }, [map, reverseGeocode]);
+  };
 
   // Use current location
   const handleUseCurrentLocation = async () => {
@@ -119,12 +168,10 @@ export const MapLocationPicker = ({
         lat: position.coords.latitude,
         lng: position.coords.longitude,
       };
-      setCenter(newCenter);
-      map?.panTo(newCenter);
-      reverseGeocode(newCenter.lat, newCenter.lng);
+      handleLocationChange(newCenter.lat, newCenter.lng);
       toast.success("Location detected!");
     } catch (error) {
-      toast.error("Could not detect location. Please search or drag map.");
+      toast.error("Could not get your location. Please search or select manually.");
     } finally {
       setIsGettingLocation(false);
       toast.dismiss();
@@ -133,93 +180,112 @@ export const MapLocationPicker = ({
 
   // Confirm location selection
   const handleConfirmLocation = () => {
-    const nearest = findNearestRestaurant(center.lat, center.lng, restaurants);
-    if (nearest) {
+    const nearestRestaurant = findNearestRestaurant(
+      center.lat,
+      center.lng,
+      restaurants
+    );
+
+    if (nearestRestaurant) {
       onLocationSelect({
         address,
         lat: center.lat,
         lng: center.lng,
-        nearestRestaurant: nearest,
+        nearestRestaurant,
       });
-      toast.success(`Nearest branch: ${nearest.name}`);
+      toast.success(`Nearest branch: ${nearestRestaurant.name}`);
     } else {
-      toast.error("No nearby restaurant found");
+      toast.error("No restaurant found nearby");
     }
   };
 
-  if (!isLoaded) {
-    return (
-      <div className="w-full h-[70vh] flex items-center justify-center bg-muted">
-        <p className="text-muted-foreground">Loading map...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col h-[80vh] gap-4">
+    <div className="space-y-4">
       {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-        <Input
-          ref={searchInputRef}
-          type="text"
-          placeholder="Search or drop pin on map"
-          className="pl-10 pr-4"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-        />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search location in Ghana..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+            className="pl-10"
+          />
+        </div>
+        <Button
+          onClick={handleSearch}
+          disabled={isSearching}
+          variant="secondary"
+        >
+          {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+        </Button>
       </div>
 
-      {/* Use Current Location Button */}
+      {/* Current Location Button */}
       <Button
         onClick={handleUseCurrentLocation}
         disabled={isGettingLocation}
         variant="outline"
         className="w-full"
       >
-        <Navigation className="h-4 w-4 mr-2" />
-        {isGettingLocation ? "Detecting..." : "Use My Current Location"}
+        <Navigation className="mr-2 h-4 w-4" />
+        {isGettingLocation ? "Getting location..." : "Use My Current Location"}
       </Button>
 
       {/* Map Container */}
-      <div className="flex-1 relative rounded-lg overflow-hidden border">
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={center}
-          zoom={15}
-          onLoad={onLoad}
-          onUnmount={onUnmount}
-          onIdle={handleMapIdle}
-          options={{
-            disableDefaultUI: false,
-            zoomControl: true,
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: false,
-          }}
-        >
-          {/* Center Pin Overlay */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full z-10 pointer-events-none">
-            <MapPin className="h-10 w-10 text-primary drop-shadow-lg" fill="currentColor" />
-          </div>
-        </GoogleMap>
+      <div className="relative w-full h-[400px] rounded-lg overflow-hidden border-2 border-border">
+        <div ref={mapContainer} className="absolute inset-0" />
+        
+        {/* Instruction Overlay */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-background/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg border z-10">
+          <p className="text-sm font-medium text-center">
+            📍 Click or drag marker to select location
+          </p>
+        </div>
       </div>
 
-      {/* Address Display */}
-      <div className="p-4 bg-muted rounded-lg">
-        <div className="flex items-start gap-2">
-          <MapPin className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-medium">Selected Location</p>
-            <p className="text-xs text-muted-foreground mt-1">{address}</p>
+      {/* Selected Location Display */}
+      <div className="border rounded-lg p-4 bg-muted/50">
+        <div className="flex items-start gap-3">
+          <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm mb-1">Selected Location:</p>
+            <p className="text-sm text-muted-foreground break-words">{address}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {center.lat.toFixed(6)}, {center.lng.toFixed(6)}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Confirm Button */}
       <Button onClick={handleConfirmLocation} className="w-full" size="lg">
-        Confirm Location
+        Confirm Location & Find Nearest Restaurant
       </Button>
+
+      {/* Restaurant List */}
+      <div className="border-t pt-4">
+        <p className="text-sm font-semibold mb-3">Available Restaurants:</p>
+        <div className="space-y-2">
+          {restaurants.map((restaurant) => (
+            <button
+              key={restaurant.id}
+              onClick={() => {
+                handleLocationChange(
+                  restaurant.coordinates.lat,
+                  restaurant.coordinates.lng
+                );
+              }}
+              className="w-full text-left p-3 rounded-lg border hover:border-primary hover:bg-primary/5 transition-all"
+            >
+              <p className="font-semibold text-sm">{restaurant.name}</p>
+              <p className="text-xs text-muted-foreground">{restaurant.address}</p>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
