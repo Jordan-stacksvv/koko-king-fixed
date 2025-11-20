@@ -49,8 +49,33 @@ const DriverDashboard = () => {
     // Refresh orders every 3 seconds
     const interval = setInterval(() => loadOrders(driverData), 3000);
     
+    // Sync driver location to orders every 2 seconds
+    const locationSyncInterval = setInterval(() => {
+      const driverLocations = JSON.parse(localStorage.getItem("driverLocations") || "{}");
+      const currentLocation = driverLocations[driverData.id];
+      
+      if (currentLocation) {
+        const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+        let updated = false;
+        
+        const updatedOrders = orders.map((order: any) => {
+          if (order.assignedDriver === driverData.id && 
+              (order.deliveryStatus === "accepted" || order.deliveryStatus === "on-route")) {
+            updated = true;
+            return { ...order, driverLocation: currentLocation };
+          }
+          return order;
+        });
+        
+        if (updated) {
+          localStorage.setItem("orders", JSON.stringify(updatedOrders));
+        }
+      }
+    }, 2000);
+    
     return () => {
       clearInterval(interval);
+      clearInterval(locationSyncInterval);
       if (gpsIntervalRef.current) {
         stopGPSTracking(gpsIntervalRef.current);
       }
@@ -129,6 +154,11 @@ const DriverDashboard = () => {
     if (orderIndex !== -1) {
       orders[orderIndex].deliveryStatus = "accepted";
       
+      // Get current driver location
+      const driverLocations = JSON.parse(localStorage.getItem("driverLocations") || "{}");
+      const currentLocation = driverLocations[driver.id] || getRestaurantLocation();
+      orders[orderIndex].driverLocation = currentLocation;
+      
       // Update driver queue status
       const queue = JSON.parse(localStorage.getItem("driverQueue") || "[]");
       const driverIndex = queue.findIndex((d: any) => d.driverId === driver.id);
@@ -163,6 +193,11 @@ const DriverDashboard = () => {
     
     if (orderIndex !== -1) {
       orders[orderIndex].deliveryStatus = "on-route";
+      
+      // Get current driver location
+      const driverLocations = JSON.parse(localStorage.getItem("driverLocations") || "{}");
+      const currentLocation = driverLocations[driver.id] || getRestaurantLocation();
+      orders[orderIndex].driverLocation = currentLocation;
       
       // Generate customer location if not exists
       if (!orders[orderIndex].customerLocation) {

@@ -171,6 +171,12 @@ export const assignDriver = mutation({
     driverId: v.string(),
     driverName: v.string(),
     driverPhone: v.string(),
+    driverLocation: v.optional(
+      v.object({
+        lat: v.number(),
+        lng: v.number(),
+      })
+    ),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, {
@@ -178,6 +184,7 @@ export const assignDriver = mutation({
       driverName: args.driverName,
       driverPhone: args.driverPhone,
       deliveryStatus: "pending-approval",
+      driverLocation: args.driverLocation,
     });
   },
 });
@@ -194,6 +201,34 @@ export const updateCustomerLocation = mutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, {
       customerLocation: args.location,
+    });
+  },
+});
+
+// Update driver location
+export const updateDriverLocation = mutation({
+  args: {
+    id: v.id("orders"),
+    location: v.object({
+      lat: v.number(),
+      lng: v.number(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      driverLocation: args.location,
+    });
+  },
+});
+
+// Cancel order
+export const cancelOrder = mutation({
+  args: {
+    id: v.id("orders"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      status: "cancelled",
     });
   },
 });

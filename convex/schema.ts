@@ -96,6 +96,12 @@ export default defineSchema({
         lng: v.number(),
       })
     ),
+    driverLocation: v.optional(
+      v.object({
+        lat: v.number(),
+        lng: v.number(),
+      })
+    ),
     timestamp: v.string(),
     createdAt: v.string(),
     confirmedAt: v.optional(v.string()),
