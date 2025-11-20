@@ -1,12 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AddOrderForm } from "@/components/kitchen/AddOrderForm";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Printer, Store, Globe } from "lucide-react";
+import { Plus, Search, Printer, Store, Globe, Package, Bike } from "lucide-react";
 import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 import { toast } from "sonner";
 
@@ -15,11 +24,30 @@ export default function KitchenOrders() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddOrder, setShowAddOrder] = useState(false);
   const [selectedTab, setSelectedTab] = useState("all");
+  const [newOrderAlert, setNewOrderAlert] = useState<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const prevOnlineOrdersCountRef = useRef(0);
+
+  // Initialize notification sound
+  useEffect(() => {
+    audioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+  }, []);
 
   useEffect(() => {
     loadOrders();
     checkAndResetDaily();
     const interval = setInterval(() => {
+      const currentOrders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const onlineOrders = currentOrders.filter((o: any) => o.orderType === "online" && o.status === "pending");
+      
+      // Check for new online orders and show alert
+      if (onlineOrders.length > prevOnlineOrdersCountRef.current) {
+        const newOrder = onlineOrders[onlineOrders.length - 1];
+        setNewOrderAlert(newOrder);
+        audioRef.current?.play();
+      }
+      prevOnlineOrdersCountRef.current = onlineOrders.length;
+      
       loadOrders();
       checkAndResetDaily();
     }, 3000);
@@ -29,11 +57,10 @@ export default function KitchenOrders() {
   const checkAndResetDaily = () => {
     const lastReset = localStorage.getItem("lastOrderReset");
     const now = new Date();
-    const midnight = new Date(now);
-    midnight.setHours(0, 0, 0, 0);
+    const lastResetTime = lastReset ? new Date(lastReset) : null;
     
-    if (!lastReset || new Date(lastReset) < midnight) {
-      // Archive old orders (move to history for admin/manager)
+    // Reset after 12 hours
+    if (!lastResetTime || (now.getTime() - lastResetTime.getTime()) > 12 * 60 * 60 * 1000) {
       const currentOrders = JSON.parse(localStorage.getItem("orders") || "[]");
       const orderHistory = JSON.parse(localStorage.getItem("orderHistory") || "[]");
       orderHistory.push(...currentOrders);
@@ -41,7 +68,7 @@ export default function KitchenOrders() {
       localStorage.setItem("orders", "[]");
       localStorage.setItem("lastOrderReset", now.toISOString());
       setOrders([]);
-      toast.info("New day started - orders archived");
+      toast.info("12-hour reset - orders archived");
     }
   };
 
@@ -155,15 +182,60 @@ export default function KitchenOrders() {
     return matchesSearch && matchesTab;
   });
 
-  const getOrdersByStatus = (status: string) => {
-    return filteredOrders.filter((order) => order.status === status);
-  };
-
   const walkInCount = orders.filter((o) => o.orderType === "walk-in").length;
   const onlineCount = orders.filter((o) => o.orderType === "online").length;
 
+  // Sort: walk-in orders first (priority)
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    if (a.orderType === "walk-in" && b.orderType === "online") return -1;
+    if (a.orderType === "online" && b.orderType === "walk-in") return 1;
+    return 0;
+  });
+
+  const getOrdersByStatus = (status: string) => {
+    return sortedOrders.filter((order) => order.status === status);
+  };
+
+  // Only online orders need confirmation (walk-ins auto-confirm)
+  // Only online orders need confirmation (walk-ins auto-confirm)
+  const pendingOrders = sortedOrders.filter(o => o.status === "pending" && o.orderType === "online");
+
   return (
     <KitchenLayout>
+      {/* New Order Alert Dialog */}
+      <AlertDialog open={!!newOrderAlert} onOpenChange={() => setNewOrderAlert(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl">🔔 New Online Order!</AlertDialogTitle>
+            <AlertDialogDescription>
+              {newOrderAlert && (
+                <div className="space-y-3 mt-4">
+                  <p className="font-semibold text-lg">Order #{newOrderAlert.id.slice(0, 8)}</p>
+                  <p className="text-base">Customer: {newOrderAlert.customerName || newOrderAlert.customer?.name}</p>
+                  <p className="text-base font-bold text-primary">Total: ₵{newOrderAlert.total?.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(newOrderAlert.timestamp).toLocaleTimeString()}
+                  </p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => {
+                if (newOrderAlert) {
+                  handleStatusChange(newOrderAlert.id, "confirmed");
+                }
+                setNewOrderAlert(null);
+              }}
+              className="w-full"
+            >
+              Confirm Order
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -206,11 +278,12 @@ export default function KitchenOrders() {
 
         {/* Order Pipeline */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Pending Orders */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>New Orders</span>
+          {/* New Online Orders - Walk-ins auto-confirm */}
+          {pendingOrders.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>New Online Orders</span>
                 <Badge variant="secondary">{getOrdersByStatus("pending").length}</Badge>
               </CardTitle>
             </CardHeader>
@@ -241,6 +314,7 @@ export default function KitchenOrders() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Confirmed Orders */}
           <Card>

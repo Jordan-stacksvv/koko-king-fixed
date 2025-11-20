@@ -65,42 +65,48 @@ export default function KitchenDashboard() {
       value: `₵${stats.todaySales.toFixed(2)}`,
       icon: DollarSign,
       color: "text-primary",
-      bgColor: "bg-primary/10"
+      bgColor: "bg-primary/10",
+      clickAction: () => navigate("/kitchen/reports")
     },
     {
       title: "Total Orders Today",
       value: stats.totalOrders,
       icon: ShoppingCart,
       color: "text-secondary",
-      bgColor: "bg-secondary/10"
+      bgColor: "bg-secondary/10",
+      clickAction: () => navigate("/kitchen/orders")
     },
     {
       title: "Orders in Queue",
       value: stats.ordersInQueue,
       icon: ShoppingCart,
       color: "text-accent",
-      bgColor: "bg-accent/10"
+      bgColor: "bg-accent/10",
+      clickAction: () => navigate("/kitchen/orders")
     },
     {
       title: "Orders Preparing",
       value: stats.ordersPreparing,
       icon: Clock,
       color: "text-muted-foreground",
-      bgColor: "bg-muted"
+      bgColor: "bg-muted",
+      clickAction: () => navigate("/kitchen/orders")
     },
     {
       title: "Ongoing Deliveries",
       value: stats.ongoingDeliveries,
       icon: Truck,
       color: "text-secondary",
-      bgColor: "bg-secondary/10"
+      bgColor: "bg-secondary/10",
+      clickAction: () => navigate("/kitchen/done")
     },
     {
       title: "Completed Orders",
       value: stats.completedOrders,
       icon: CheckCircle2,
       color: "text-primary",
-      bgColor: "bg-primary/10"
+      bgColor: "bg-primary/10",
+      clickAction: () => navigate("/kitchen/orders")
     }
   ];
 
@@ -138,10 +144,14 @@ export default function KitchenDashboard() {
           </p>
         </div>
 
-      {/* Live Stats Grid */}
+      {/* Live Stats Grid - Clickable */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {statCards.map((stat, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow">
+          <Card 
+            key={index} 
+            className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/50"
+            onClick={stat.clickAction}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
@@ -152,10 +162,7 @@ export default function KitchenDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                Live updates
-              </div>
+              <p className="text-xs text-muted-foreground mt-1">Click for details</p>
             </CardContent>
           </Card>
         ))}
