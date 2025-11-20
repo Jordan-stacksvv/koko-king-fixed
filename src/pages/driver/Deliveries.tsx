@@ -343,57 +343,6 @@ const DriverDeliveries = () => {
           </div>
         )}
       </main>
-
-      {/* Edit Location Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Delivery Location</DialogTitle>
-          </DialogHeader>
-          {editingDelivery && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Customer Name</Label>
-                <Input
-                  value={editingDelivery.customer.name}
-                  onChange={(e) => setEditingDelivery({
-                    ...editingDelivery,
-                    customer: { ...editingDelivery.customer, name: e.target.value }
-                  })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Phone Number</Label>
-                <Input
-                  value={editingDelivery.customer.phone}
-                  onChange={(e) => setEditingDelivery({
-                    ...editingDelivery,
-                    customer: { ...editingDelivery.customer, phone: e.target.value }
-                  })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Delivery Address</Label>
-                <Input
-                  value={editingDelivery.customer.address}
-                  onChange={(e) => setEditingDelivery({
-                    ...editingDelivery,
-                    customer: { ...editingDelivery.customer, address: e.target.value }
-                  })}
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveEdit}>
-                  Save Changes
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
