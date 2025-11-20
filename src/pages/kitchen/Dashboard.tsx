@@ -8,7 +8,9 @@ import {
   Truck, 
   TrendingUp,
   BarChart3,
-  DollarSign
+  DollarSign,
+  ChefHat,
+  Bike
 } from "lucide-react";
 import { KitchenLayout } from "@/components/kitchen/KitchenLayout";
 
@@ -124,6 +126,13 @@ export default function KitchenDashboard() {
       icon: Truck,
       color: "bg-secondary hover:bg-secondary/90",
       onClick: () => navigate("/kitchen/settings")
+    },
+    {
+      title: "Delivery Tracking",
+      description: "Monitor ongoing, delayed, and completed deliveries",
+      icon: Bike,
+      color: "bg-accent hover:bg-accent/90",
+      onClick: () => navigate("/kitchen/deliveries")
     },
     {
       title: "Sales Reports",

@@ -298,6 +298,20 @@ export default function KitchenDone() {
                   : "Auto-Assign (First in Queue)"}
               </Button>
 
+              <Button
+                onClick={() => {
+                  broadcastToAllDrivers();
+                  setShowAssignDialog(false);
+                }}
+                className="w-full"
+                size="lg"
+                variant="outline"
+                disabled={assignmentInProgress || onlineDrivers.length === 0}
+              >
+                <Radio className="mr-2 h-5 w-5" />
+                Broadcast to All Riders
+              </Button>
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
