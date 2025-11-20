@@ -274,10 +274,21 @@ export default function KitchenOrders() {
             <h1 className="text-3xl font-bold tracking-tight">Sales</h1>
             <p className="text-muted-foreground mt-1">Manage walk-in and online orders</p>
           </div>
-          <Button onClick={() => setShowAddOrder(true)} size="lg" className="gap-2">
-            <Plus className="h-5 w-5" />
-            Add Walk-in Order
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => window.open("/kitchen/display", "_blank", "width=1920,height=1080")}
+              size="lg"
+              className="gap-2"
+            >
+              <Package className="h-5 w-5" />
+              Kitchen Display
+            </Button>
+            <Button onClick={() => setShowAddOrder(true)} size="lg" className="gap-2">
+              <Plus className="h-5 w-5" />
+              Add Walk-in Order
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -462,7 +473,13 @@ export default function KitchenOrders() {
             <DialogHeader>
               <DialogTitle>Create Walk-in Order</DialogTitle>
             </DialogHeader>
-            <AddOrderForm onClose={() => setShowAddOrder(false)} />
+            <AddOrderForm 
+              onClose={() => setShowAddOrder(false)}
+              onOrderCreated={() => {
+                loadOrders();
+                setShowAddOrder(false);
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
