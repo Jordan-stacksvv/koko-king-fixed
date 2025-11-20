@@ -44,11 +44,16 @@ const AdminDrivers = () => {
       // Create approved driver
       const drivers = JSON.parse(localStorage.getItem("drivers") || "[]");
       const newDriver = {
-        id: `DRV-${Date.now().toString().slice(-6)}`,
         ...application,
+        id: `DRV-${Date.now().toString().slice(-6)}`,
+        approved: true,
         status: "approved",
         approvedAt: new Date().toISOString(),
-        deliveries: []
+        deliveries: [],
+        totalEarnings: 0,
+        earnings: 0,
+        vehicleReg: application.vehicleReg || application.vehicleRegistration,
+        vehicleRegistration: application.vehicleReg || application.vehicleRegistration
       };
       
       drivers.push(newDriver);

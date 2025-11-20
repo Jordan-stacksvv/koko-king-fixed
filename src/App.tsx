@@ -26,6 +26,7 @@ import ManagerOrders from "./pages/manager/Orders";
 import Deliveries from "./pages/manager/Deliveries";
 import ManagerDrivers from "./pages/manager/Drivers";
 import MenuManagement from "./pages/manager/MenuManagement";
+import ManagerExtras from "./pages/manager/Extras";
 import Payments from "./pages/manager/Payments";
 import Settings from "./pages/manager/Settings";
 
@@ -99,6 +100,7 @@ const App = () => (
           <Route path="/manager/deliveries" element={<Deliveries />} />
           <Route path="/manager/drivers" element={<ManagerDrivers />} />
           <Route path="/manager/menu" element={<MenuManagement />} />
+          <Route path="/manager/extras" element={<ManagerExtras />} />
           <Route path="/manager/payments" element={<Payments />} />
           <Route path="/manager/settings" element={<Settings />} />
 
