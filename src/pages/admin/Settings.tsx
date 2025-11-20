@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { Send } from "lucide-react";
+import { Send, Upload, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminSettings = () => {
@@ -19,11 +19,19 @@ const AdminSettings = () => {
   const [branchAccessEnabled, setBranchAccessEnabled] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [newCategory, setNewCategory] = useState({ id: "", name: "" });
+  const [bannerImages, setBannerImages] = useState<string[]>([]);
+  const [logoImage, setLogoImage] = useState("");
 
   useEffect(() => {
     if (localStorage.getItem("adminAuth") !== "true") {
       navigate("/admin/login");
     }
+
+    // Load saved images
+    const savedBanners = localStorage.getItem("customBannerImages");
+    const savedLogo = localStorage.getItem("customLogo");
+    if (savedBanners) setBannerImages(JSON.parse(savedBanners));
+    if (savedLogo) setLogoImage(savedLogo);
   }, [navigate]);
 
   const handleLogout = () => {
@@ -56,6 +64,64 @@ const AdminSettings = () => {
     toast.success(`Category "${newCategory.name}" added successfully!`);
     setNewCategory({ id: "", name: "" });
     setIsCategoryDialogOpen(false);
+  };
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Maximum size is 5MB`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setBannerImages((prev) => {
+          const updated = [...prev, base64];
+          localStorage.setItem("customBannerImages", JSON.stringify(updated));
+          return updated;
+        });
+        toast.success("Banner image uploaded successfully!");
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo file is too large. Maximum size is 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setLogoImage(base64);
+      localStorage.setItem("customLogo", base64);
+      toast.success("Logo uploaded successfully! Refresh to see changes.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveBanner = (index: number) => {
+    setBannerImages((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      localStorage.setItem("customBannerImages", JSON.stringify(updated));
+      return updated;
+    });
+    toast.success("Banner image removed");
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoImage("");
+    localStorage.removeItem("customLogo");
+    toast.success("Logo removed. Refresh to see changes.");
   };
 
   return (
@@ -220,6 +286,107 @@ const AdminSettings = () => {
                 <div className="space-y-2">
                   <Label>Currency Symbol</Label>
                   <Input defaultValue="₵" maxLength={3} />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Branding & Images */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Branding & Images</CardTitle>
+                <p className="text-sm text-muted-foreground">Upload custom logo and banner images for your storefront</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Logo Upload */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">Restaurant Logo</Label>
+                    {logoImage && (
+                      <Button variant="ghost" size="sm" onClick={handleRemoveLogo}>
+                        <X className="h-4 w-4 mr-1" />
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid gap-4">
+                    {logoImage && (
+                      <div className="relative p-4 border rounded-lg bg-muted/50">
+                        <img src={logoImage} alt="Logo" className="h-16 w-auto object-contain" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="logo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => document.getElementById("logo-upload")?.click()}
+                        className="w-full"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {logoImage ? "Change Logo" : "Upload Logo"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Recommended: PNG or SVG with transparent background. Max size: 2MB
+                    </p>
+                  </div>
+                </div>
+
+                {/* Banner Images Upload */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Header Banner Images</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Upload multiple images for the homepage carousel
+                  </p>
+                  
+                  {bannerImages.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {bannerImages.map((img, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={img}
+                            alt={`Banner ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleRemoveBanner(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="banner-upload"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleBannerUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => document.getElementById("banner-upload")?.click()}
+                      className="w-full"
+                    >
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                      Add Banner Images
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Recommended: 1920x400px images. Max 5MB per image. Multiple uploads supported.
+                  </p>
                 </div>
               </CardContent>
             </Card>

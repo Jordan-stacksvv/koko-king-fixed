@@ -10,7 +10,16 @@ export const Navbar = () => {
   const [cartCount, setCartCount] = useState(0);
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [logoSrc, setLogoSrc] = useState(kokoKingLogo);
   
+  useEffect(() => {
+    // Load custom logo if available
+    const customLogo = localStorage.getItem("customLogo");
+    if (customLogo) {
+      setLogoSrc(customLogo);
+    }
+  }, []);
+
   useEffect(() => {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     setCartCount(cart.reduce((sum: number, item: any) => sum + item.quantity, 0));
@@ -58,7 +67,7 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center transition-transform hover:scale-105">
-            <img src={kokoKingLogo} alt="Koko King" className="h-8 sm:h-10 w-auto cursor-pointer" />
+            <img src={logoSrc} alt="Koko King" className="h-8 sm:h-10 w-auto cursor-pointer" />
           </Link>
 
           {/* Desktop Navigation */}
